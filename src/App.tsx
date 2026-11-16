@@ -1,6 +1,7 @@
 import { Toast } from "./components/Toast";
-import { useLang } from "./i18n";
+import { t, useLang } from "./i18n";
 import { useRoute } from "./lib/nav";
+import { useData } from "./lib/store";
 import { AddRoom } from "./screens/AddRoom";
 import { Defaults } from "./screens/Defaults";
 import { ElementScreen } from "./screens/ElementScreen";
@@ -23,6 +24,13 @@ import { Study } from "./screens/Study";
 export function App() {
   useLang();
   const r = useRoute();
+  const { ready } = useData();
+  // Form screens copy the stored data into local state when they mount. After a reload the
+  // router restores the last screen before loadAll() is done; such a screen would start
+  // empty and save the empty values on the next step. So wait for the data first.
+  if (!ready && r.name !== "start" && r.name !== "language" && r.name !== "menu") {
+    return <><main className="wrap"><div className="empty status busy">{t("menu.loading")}</div></main><Toast /></>;
+  }
   let screen;
   switch (r.name) {
     case "start": screen = <Start />; break;

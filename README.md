@@ -75,7 +75,9 @@ src/
     gwr.ts           Swiss building register (geo.admin.ch) search and mapping
     osm.ts           OpenStreetMap (Nominatim) address search outside Switzerland – only on button press, max 1 request/s
     elements.ts      element creation and suggestions (auto-fill)
-    store.ts         IndexedDB storage (projects, elements, photos)
+    store.ts         IndexedDB storage (projects, elements, photos). The app shows only
+                     start, language and menu until the data is loaded, so a form screen
+                     restored after a reload cannot save empty values.
     timing.ts        time-study clock
     segmentation/    engine interface + region-growing engine
     export.ts        Excel, ZIP, CSV, PDF, time study
