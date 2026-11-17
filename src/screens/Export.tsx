@@ -2,7 +2,9 @@ import { useState } from "react";
 import { BuildingIllustration } from "../components/BuildingIllustration";
 import { TopBar } from "../components/TopBar";
 import { t, useLang } from "../i18n";
-import { elementTable, exportCSV, exportPDF, exportXLSX, exportZIP } from "../lib/export";
+import { elementTable, exportCSV, exportLabelsPDF, exportPDF, exportXLSX, exportZIP } from "../lib/export";
+import { isLocalUrl } from "../lib/labelCode";
+import { labelBase } from "../lib/labels";
 import { back, home } from "../lib/nav";
 import { elementsOf, useData } from "../lib/store";
 
@@ -15,10 +17,12 @@ export function ExportScreen({ pid }: { pid: string }) {
   const rows = elementTable(p).slice(1);
   const open = elementsOf(p.id).filter(e => e.status !== "saved").length;
 
-  const run = async (fn: () => void | Promise<void>) => {
+  const labelUrlBase = labelBase();
+
+  const run = async (fn: () => void | Promise<void>, failed = t("ex.failed")) => {
     setMsg(t("ex.preparing"));
     try { await fn(); setMsg(""); setDone(true); }
-    catch (e) { console.warn(e); setMsg(t("ex.failed")); }
+    catch (e) { console.warn(e); setMsg(failed); }
   };
 
   if (done) return (
@@ -44,8 +48,11 @@ export function ExportScreen({ pid }: { pid: string }) {
           <button className="btn sage" disabled={!rows.length} onClick={() => run(() => exportXLSX(p))}>Excel <span className="small">.xlsx</span></button>
           <button className="btn sage" disabled={!rows.length} onClick={() => run(() => exportPDF(p))}>{t("ex.pdf")} <span className="small">{t("ex.report")}</span></button>
           <button className="btn sage" disabled={!rows.length} onClick={() => run(() => exportCSV(p))}>CSV <span className="small">.csv</span></button>
+          <button className="btn sage" disabled={!rows.length} onClick={() => run(() => exportLabelsPDF(p), t("ex.labelsFailed"))}>{t("ex.labels")} <span className="small">{t("ex.labelsSub")}</span></button>
         </div>
         <p className="small muted">{t("ex.note")}</p>
+        <p className="small muted">{t("ex.labelsNote", { url: labelUrlBase })}</p>
+        {isLocalUrl(labelUrlBase) && <p className="small" style={{ color: "var(--warn)" }}>{t("ex.labelsLocal")}</p>}
         <div className={"status" + (msg === t("ex.preparing") ? " busy" : "")}>{msg}</div>
       </main>
     </>

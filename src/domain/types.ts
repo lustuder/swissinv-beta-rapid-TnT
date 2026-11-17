@@ -102,6 +102,8 @@ export interface Element {
   createdAt: number;
   updatedAt: number;
   savedAt?: number;
+  /** Permanent code of the element's QR label (8 characters, see lib/labelCode.ts). Not in `fields`. */
+  labelCode?: string;
 }
 
 export type Route =

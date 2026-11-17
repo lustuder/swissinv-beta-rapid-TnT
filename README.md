@@ -15,7 +15,7 @@ The app runs fully in **German or English** (chosen after the start screen; Fren
 3. **Project menu** with three parts:
    - **Projektinformationen** – four pages: find the building (address search in the Swiss building register GWR, which fills EGRID, EGID, address, year built, volume, storeys and the SIA 102 building type; outside Switzerland, e.g. in Germany, a button searches OpenStreetMap instead, which fills the address and, where mapped, storeys, year built and building type), Allgemeine Gebäudedaten, Weitere Informationen, Kontakte. The auditor is remembered for the next project.
    - **Inventar** – starts with the values for all elements (Verfügbarkeit, Status, Dokumente) and the floors, then floors → rooms → elements. Rooms get a tag after `Floor_Use_Number`, e.g. `OG1_OFF_02`; "Next room" sits in the top corner.
-   - **Export** – Excel in the Swiss-Inv structure, ZIP with Excel + photos, CSV, PDF report.
+   - **Export** – Excel in the Swiss-Inv structure, ZIP with Excel + photos, CSV, PDF report, QR labels.
 4. **Room photo → bounding box** (assisted mode) – tap an element for an automatic box, or drag a box around it. The crop becomes the first photo. (Segmentation masks are reserved for BUISI.)
 5. **Element** – six pages: photos (front, side, fixing detail), identification (function in the building → element type, which generates the eBKP number and name and the IFC entity; the name stays free), quantity and dimensions (with a sketch), potential, description and attachments ("Keine" for no documents), Bauteil Stufe 2. Verortung is filled from the room and not asked.
 
@@ -47,12 +47,24 @@ Every push to `main` builds the app and publishes it (`.github/workflows/deploy.
 ## Swiss-Inv conformity
 
 - All field names, order, value lists, Muss/Kann and explanations come from `src/domain/swissinv.ts`, transcribed from the template.
-- The Excel export has the sheets **Gebäude** and **Bauteile** in template order and naming. Fields the app adds beyond Swiss-Inv (marked "Zusatz" in the app) go to a separate sheet **Zusatzfelder**: Hauptmaterial, destination project, mode, GWR reference.
+- The Excel export has the sheets **Gebäude** and **Bauteile** in template order and naming. Fields the app adds beyond Swiss-Inv (marked "Zusatz" in the app) go to a separate sheet **Zusatzfelder**: Hauptmaterial, destination project, mode, GWR reference, QR label code ("Etiketten-Code", last column).
 - **Dimensions:** the template lists height, width, depth, length and diameter as Muss. The app counts the group as complete with height + width + depth, or length, or diameter.
 - **Photos:** at least 3 per element, compressed to under 1.5 MB, named `<Bauteil ID>_<n>.jpg` in the ZIP and in "Liste der vorhandenen Fotos".
 - **Bauwerksart** allows several values for mixed-use buildings, joined with "; ".
 - **"Keine"** in "Liste der vorhandenen Dokumente" is an app addition for elements without documents.
 - **Element type (Bauteiltyp)** and **IFC PredefinedType** are app fields from the CRB rule set; they standardise eBKP and IFC and are exported in "Zusatzfelder".
+
+## QR labels
+
+**Export → QR labels** makes a PDF with one label for each saved element. Draft elements get no label.
+
+1. **Sheet:** A4 with 3 × 8 labels of 70 × 37 mm, no side margin. Print at 100 % (actual size).
+2. **Label:** the QR code, the code (e.g. `K7M2-X9PA`), the Bauteil ID, the Bezeichnung, the Verortung and the project name. Long text ends with "…". Characters outside Windows-1252 print as "?", as in the PDF report.
+3. **Code:** 8 characters from `23456789ABCDEFGHJKMNPQRSTUVWXYZ`. The last character is a check character, so a typing mistake is found. An element gets its code at the first label export and keeps it. A second export prints the same codes. The code is in the "Zusatzfelder" sheet as "Etiketten-Code".
+4. **Link:** the QR code holds `<address>?e=<CODE>`. On GitHub Pages, the address is the published app. To print from another address, set `VITE_QR_BASE_URL` in `.env.local`, for example `VITE_QR_BASE_URL=https://bendieklaranjo.github.io/swissinv-beta/`. The Export screen shows the address and warns if a phone outside your network cannot open it.
+5. **A printed label keeps its address forever.** Print labels for real use only from the permanent address.
+
+In this version, a scanned label opens the app at the start screen. Opening the element from the label comes in a later version.
 
 ## The time study
 
@@ -80,7 +92,10 @@ src/
                      restored after a reload cannot save empty values.
     timing.ts        time-study clock
     segmentation/    engine interface + region-growing engine
-    export.ts        Excel, ZIP, CSV, PDF, time study
+    export.ts        Excel, ZIP, CSV, PDF, QR labels, time study
+    labelCode.ts     QR label codes: new code, check character, link, reading scanned text
+    labelSheet.ts    PDF layout of the label sheet (A4, 3 × 8 labels of 70 × 37 mm)
+    labels.ts        label codes and the store: link address, find and assign codes
     images.ts        photo decoding (incl. iPhone HEIC), compression, cropping
     nav.ts           screen navigation
   screens/           one file per screen

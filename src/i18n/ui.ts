@@ -215,6 +215,11 @@ export const UI = {
   "ex.done": d("Inventar exportiert", "Inventory exported"),
   "ex.doneText": d("{n} Bauteile aus {p}.", "{n} elements from {p}."),
   "ex.another": d("Anderes Format", "Export another format"),
+  "ex.labels": d("QR-Etiketten", "QR labels"),
+  "ex.labelsSub": d("PDF · 70 × 37 mm", "PDF · 70 × 37 mm"),
+  "ex.labelsNote": d("QR-Etiketten: A4-Bogen mit 3 × 8 Etiketten à 70 × 37 mm, eine pro gespeichertem Bauteil. Mit 100 % (tatsächliche Grösse) drucken. Bauteile ohne Etikette erhalten dabei einen Code. Der QR-Code öffnet {url}.", "QR labels: A4 sheet with 3 × 8 labels of 70 × 37 mm, one per saved element. Print at 100 % (actual size). Elements without a label get a code. The QR code opens {url}."),
+  "ex.labelsLocal": d("Achtung: Diese Adresse ist nur in Ihrem Netzwerk erreichbar. Etiketten für den Einsatz aus der veröffentlichten App drucken.", "Warning: this address only works on your network. Print labels for real use from the published app."),
+  "ex.labelsFailed": d("Die Etiketten konnten nicht erstellt werden. Bitte erneut versuchen.", "The labels could not be created. Please try again."),
 
   // study
   "st.title": d("Zeitstudie", "Time study"),

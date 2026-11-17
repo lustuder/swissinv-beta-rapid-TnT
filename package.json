@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.3.0",
   "type": "module",
-  "description": "SwissInv-Beta \u2013 reuse inventory following the Swiss-Inv data structure (human-in-the-loop prototype)",
+  "description": "SwissInv-Beta – reuse inventory following the Swiss-Inv data structure (human-in-the-loop prototype)",
   "scripts": {
     "dev": "vite --host",
     "dev:phone": "vite --host --mode phone",
@@ -17,12 +17,14 @@
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
     "jszip": "^3.10.1",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-basic-ssl": "^1.1.0",

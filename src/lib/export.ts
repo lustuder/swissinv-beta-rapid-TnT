@@ -6,6 +6,7 @@
  * - CSV: the "Bauteile" sheet.
  * - PDF: report in the UI language – header with project image and building data, overview
  *   table, then one page per element with its fields and photos.
+ * - QR labels: PDF sheets with one label per saved element (lib/labelSheet.ts).
  * Excel/CSV always use the official German names and values; heavy libraries load on demand.
  */
 import { RULE_BY_ID, ebkpName } from "../domain/crb";
@@ -13,6 +14,9 @@ import { floorLabel } from "../domain/fields";
 import { BUILDING_FIELDS, BUILDING_SECTIONS, ELEMENT_FIELD, STUFE1_KEYS, STUFE2_KEYS, STUFE2_SECTIONS, missingElementMuss, splitMulti, type FieldDef } from "../domain/swissinv";
 import type { Element, Project } from "../domain/types";
 import { getLang, label, opt, optShort } from "../i18n";
+import { labelUrl } from "./labelCode";
+import { assignLabelCodes, labelBase } from "./labels";
+import { renderLabelSheet } from "./labelSheet";
 import { elementsOf, getPhoto } from "./store";
 
 /* ---------------------------------------------------------------- helpers */
@@ -77,11 +81,11 @@ export function extrasTable(p: Project): (string | number)[][] {
   const out: (string | number)[][] = [["Gebäude – Zusatzfeld", "Wert"], ...extraB.map(d => [d.label, cell(d, p.building[d.key])])];
   if (p.gwr?.source === "osm") out.push(["OSM Objekt", p.gwr.featureId], ["OSM Name", p.gwr.name ?? ""], ["OSM Koordinaten (WGS84)", p.gwr.lat && p.gwr.lon ? `${p.gwr.lat}; ${p.gwr.lon}` : ""]);
   else if (p.gwr) out.push(["GWR Feature", p.gwr.featureId], ["GWR Gebäudebezeichnung", p.gwr.name ?? ""], ["GWR Koordinaten (LV95)", p.gwr.e && p.gwr.n ? `${p.gwr.e}; ${p.gwr.n}` : ""]);
-  out.push([], ["Bauteil ID", "Bauteiltyp", "IFC PredefinedType", "Raum-Tag", "Raum", "Geschoss", "Zielprojekt bekannt", "Zielprojekt", "Erfassungsmodus", "Offene Muss-Felder"]);
+  out.push([], ["Bauteil ID", "Bauteiltyp", "IFC PredefinedType", "Raum-Tag", "Raum", "Geschoss", "Zielprojekt bekannt", "Zielprojekt", "Erfassungsmodus", "Offene Muss-Felder", "Etiketten-Code"]);
   for (const e of savedElements(p)) {
     const r = p.rooms.find(x => x.id === e.roomId);
     const miss = missingElementMuss(e.fields, e.photoIds.length).map(k => (k === "_dims" ? "Abmessungen" : k === "_photos" ? "Fotos (mind. 3)" : ELEMENT_FIELD[k].label));
-    out.push([e.fields.bauteilId ?? "", RULE_BY_ID[e.fields.bauteiltyp ?? ""]?.de ?? e.fields.bauteiltyp ?? "", e.fields.ifcTyp ?? "", r?.tag ?? "", r?.name ?? "", floorLabel(r?.floor ?? 0), e.fields.zielprojektBekannt ?? "", e.fields.zielprojekt ?? "", e.timing.mode, miss.join(", ")]);
+    out.push([e.fields.bauteilId ?? "", RULE_BY_ID[e.fields.bauteiltyp ?? ""]?.de ?? e.fields.bauteiltyp ?? "", e.fields.ifcTyp ?? "", r?.tag ?? "", r?.name ?? "", floorLabel(r?.floor ?? 0), e.fields.zielprojektBekannt ?? "", e.fields.zielprojekt ?? "", e.timing.mode, miss.join(", "), e.labelCode ?? ""]);
   }
   return out;
 }
@@ -124,7 +128,7 @@ async function workbook(p: Project): Promise<ArrayBuffer> {
   XLSX.utils.book_append_sheet(wb, sheet(buildingTable(p), [24, 52, 40, 10]), "Gebäude");
   const et = elementTable(p);
   XLSX.utils.book_append_sheet(wb, sheet(et, et[0].map(() => 20)), "Bauteile");
-  XLSX.utils.book_append_sheet(wb, sheet(extrasTable(p), [26, 26, 18, 18, 18, 10, 18, 22, 14, 40]), "Zusatzfelder");
+  XLSX.utils.book_append_sheet(wb, sheet(extrasTable(p), [26, 26, 18, 18, 18, 10, 18, 22, 14, 40, 14]), "Zusatzfelder");
   const sr = studyRows([p]);
   if (sr.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sr), "Zeitstudie");
   return XLSX.write(wb, { type: "array", bookType: "xlsx" });
@@ -150,6 +154,25 @@ export async function exportZIP(p: Project) {
 
 export function exportCSV(p: Project) {
   download(baseName(p) + "_Bauteile.csv", new Blob([csvOf(elementTable(p))], { type: "text/csv" }));
+}
+
+/**
+ * QR labels: one label per saved element, sorted by room, then by creation time.
+ * Elements without a label get a permanent code here, so this export changes data.
+ */
+export async function exportLabelsPDF(p: Project) {
+  const roomIndex = new Map(p.rooms.map((r, i) => [r.id, i]));
+  const els = savedElements(p).sort((a, b) => (roomIndex.get(a.roomId) ?? Infinity) - (roomIndex.get(b.roomId) ?? Infinity) || a.createdAt - b.createdAt);
+  assignLabelCodes(els);
+  const base = labelBase();
+  const blob = await renderLabelSheet(els.map(e => ({
+    code: e.labelCode!,
+    url: labelUrl(e.labelCode!, base),
+    title: e.fields.bauteilId ?? "",
+    lines: [e.fields.bezeichnung ?? "", e.fields.verortung ?? ""],
+    foot: p.name,
+  })));
+  download(baseName(p) + "_Etiketten.pdf", blob);
 }
 
 export function exportStudyCSV(projects: Project[]) {
