@@ -39,6 +39,7 @@ export function Menu() {
               );
             })}
         </div>
+        <button className="btn ghost" onClick={() => navigate({ name: "label" })}><Icon name="qr" /> {t("menu.openLabel")}</button>
         <button className="btn ghost" onClick={() => navigate({ name: "study" })}><Icon name="chart" /> {t("menu.study")}</button>
         <p className="small muted">{t("menu.storage")}</p>
       </main>

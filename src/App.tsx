@@ -1,7 +1,7 @@
 import { Toast } from "./components/Toast";
 import { t, useLang } from "./i18n";
 import { useRoute } from "./lib/nav";
-import { useData } from "./lib/store";
+import { useData, useStaleTab } from "./lib/store";
 import { AddRoom } from "./screens/AddRoom";
 import { Defaults } from "./screens/Defaults";
 import { ElementScreen } from "./screens/ElementScreen";
@@ -9,6 +9,7 @@ import { ExportScreen } from "./screens/Export";
 import { Floors } from "./screens/Floors";
 import { Hub } from "./screens/Hub";
 import { Info } from "./screens/Info";
+import { LabelScreen } from "./screens/Label";
 import { Language } from "./screens/Language";
 import { Menu } from "./screens/Menu";
 import { ModeSwitch } from "./screens/ModeSwitch";
@@ -25,6 +26,19 @@ export function App() {
   useLang();
   const r = useRoute();
   const { ready } = useData();
+  const staleTab = useStaleTab();
+  // A newer tab writes now (e.g. opened by a scanned label). This tab must not show or save old data.
+  if (staleTab) {
+    return (
+      <main className="wrap">
+        <div className="card stack" style={{ gap: 8, marginTop: 24 }}>
+          <b>{t("tab.stale")}</b>
+          <p className="small muted" style={{ margin: 0 }}>{t("tab.staleText")}</p>
+          <button className="btn primary" onClick={() => location.reload()}>{t("tab.useThis")}</button>
+        </div>
+      </main>
+    );
+  }
   // Form screens copy the stored data into local state when they mount. After a reload the
   // router restores the last screen before loadAll() is done; such a screen would start
   // empty and save the empty values on the next step. So wait for the data first.
@@ -47,6 +61,7 @@ export function App() {
     case "element": screen = <ElementScreen key={r.elementId} pid={r.pid} elementId={r.elementId} step={r.step ?? 0} />; break;
     case "export": screen = <ExportScreen pid={r.pid} />; break;
     case "study": screen = <Study />; break;
+    case "label": screen = <LabelScreen key={r.code ?? ""} code={r.code} />; break;
     default: screen = <Menu />;
   }
   return <>{screen}<Toast /></>;

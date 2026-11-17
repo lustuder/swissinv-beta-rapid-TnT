@@ -277,3 +277,22 @@ details.multi.suggested{background:color-mix(in oklab,var(--c4) 13%,var(--surfac
 .illus{display:block;width:100%;height:auto;border-radius:var(--r);background:#fff}
 .splash-img{display:block;width:100%;height:auto;background:#fff;border-radius:18px;padding:14px;box-sizing:border-box}
 .hero-menu .illus{padding:6px;box-sizing:border-box}
+
+/* QR labels: QR button on each element row, label window */
+.li-row{display:flex;align-items:stretch;border-top:1px solid var(--line)}
+.li-row:first-child{border-top:0}
+.li-row .li{border-top:0;flex:1;min-width:0}
+.li-qr{flex:none;width:52px;min-height:44px;display:grid;place-items:center;border:0;border-left:1px solid var(--line);background:none;color:var(--primary);cursor:pointer}
+.li-qr:hover{background:var(--sunk)}
+.li-qr svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.label-dialog{width:min(92vw,420px);padding:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);color:var(--fg);display:flex;flex-direction:column;gap:12px}
+.label-dialog:not([open]){display:none}
+.label-dialog::backdrop{background:color-mix(in oklab,var(--fg) 45%,transparent)}
+.label-preview{display:flex;gap:4%;aspect-ratio:70/37;padding:7%;border:1px dashed var(--line);border-radius:6px;background:var(--surface)}
+.label-preview img,.label-qr-wait{height:100%;aspect-ratio:1;flex:none}
+.label-qr-wait{background:var(--sunk)}
+.label-text{display:flex;flex-direction:column;gap:1px;min-width:0;font-size:12px;line-height:1.25}
+.label-text>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.label-code{font:600 14px var(--f-mono)}
+.label-foot{margin-top:auto;font-size:11px}
+.label-print-frame{position:absolute;width:1px;height:1px;border:0;opacity:0;pointer-events:none}

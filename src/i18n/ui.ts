@@ -221,6 +221,25 @@ export const UI = {
   "ex.labelsLocal": d("Achtung: Diese Adresse ist nur in Ihrem Netzwerk erreichbar. Etiketten für den Einsatz aus der veröffentlichten App drucken.", "Warning: this address only works on your network. Print labels for real use from the published app."),
   "ex.labelsFailed": d("Die Etiketten konnten nicht erstellt werden. Bitte erneut versuchen.", "The labels could not be created. Please try again."),
 
+  // QR labels: open a label, label window on the room screen, one writing tab
+  "menu.openLabel": d("Etikette öffnen", "Open a label"),
+  "lbl.title": d("Etikette", "Label"),
+  "lbl.code": d("Etiketten-Code", "Label code"),
+  "lbl.enter": d("Code von der Etikette eingeben", "Enter the code from the label"),
+  "lbl.open": d("Öffnen", "Open"),
+  "lbl.unknown": d("Diese Etikette ist auf diesem Gerät nicht bekannt.", "This label is not known on this device."),
+  "lbl.unknownText": d("Die Daten liegen nur auf dem Gerät und im Browser, mit dem das Inventar erfasst wurde.", "The data is stored only on the device and in the browser used for the inventory."),
+  "lbl.invalid": d("Das ist kein gültiger Code. Ein Code hat 8 Zeichen: 2–9 und A–Z ohne I, L, O.", "This is not a valid code. A code has 8 characters: 2–9 and A–Z without I, L, O."),
+  "lbl.several": d("Mehrere Bauteile tragen diesen Code. Wählen Sie eines.", "Several elements carry this code. Choose one."),
+  "lbl.print": d("Drucken", "Print"),
+  "lbl.download": d("PDF herunterladen", "Download PDF"),
+  "lbl.close": d("Schliessen", "Close"),
+  "lbl.singleNote": d("Eine Etikette 70 × 37 mm. Mit 100 % (tatsächliche Grösse) drucken. Hat das Bauteil noch keine Etikette, erhält es jetzt einen Code. Der QR-Code öffnet dieses Bauteil in diesem Browser auf diesem Gerät: {url}", "One label, 70 × 37 mm. Print at 100 % (actual size). If the element has no label yet, it gets a code now. The QR code opens this element in this browser on this device: {url}"),
+  "rm.qrFor": d("QR-Etikette für {name}", "QR label for {name}"),
+  "tab.stale": d("SwissInv-Beta ist in einem anderen Tab geöffnet.", "SwissInv-Beta is open in another tab."),
+  "tab.staleText": d("Damit keine Eingaben verloren gehen, arbeitet nur ein Tab. Schliessen Sie diesen Tab oder arbeiten Sie hier weiter.", "To keep your entries safe, only one tab works at a time. Close this tab or continue here."),
+  "tab.useThis": d("Hier weiterarbeiten", "Continue here"),
+
   // study
   "st.title": d("Zeitstudie", "Time study"),
   "st.eyebrow": d("Aktive Zeit pro Bauteil bis zum ersten Speichern", "Active time per element, until first save"),

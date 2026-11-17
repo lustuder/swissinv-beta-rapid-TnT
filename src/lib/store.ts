@@ -31,6 +31,26 @@ export const getData = () => data;
 
 export const nid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+/* ---------- one writing tab ---------- */
+// A scanned QR label opens a new tab. An older tab holds older data in memory; if it saved, it
+// would overwrite newer records (a project record holds all its rooms). So only the newest tab
+// writes. Older tabs become "stale": persist() and remove() do nothing, App shows a notice.
+const TAB_KEY = "swissinv:tab";
+const tabId = nid();
+let stale = false;
+const tabListeners = new Set<() => void>();
+window.addEventListener("storage", e => {
+  if (e.key !== TAB_KEY || !e.newValue || e.newValue === tabId || stale) return;
+  stale = true;
+  tabListeners.forEach(l => l());
+});
+/** Call once at start: this tab becomes the writing tab, all other open tabs become stale. */
+export function claimTab() {
+  try { localStorage.setItem(TAB_KEY, tabId); } catch { /* storage blocked: no guard */ }
+}
+export const isStaleTab = () => stale;
+export const useStaleTab = () => useSyncExternalStore(l => { tabListeners.add(l); return () => tabListeners.delete(l); }, () => stale);
+
 export async function loadAll() {
   try {
     const all = await entries<string, Project | Element>(dataDb);
@@ -138,9 +158,11 @@ export function usePhotoUrl(id?: string) {
 
 /* ---------- persistence (swap these for a backend later) ---------- */
 async function persist(key: string, value: unknown) {
+  if (stale) return;
   try { await set(key, JSON.parse(JSON.stringify(value)), dataDb); }
   catch (e) { console.warn("Save failed", e); window.dispatchEvent(new CustomEvent("buisi:toast", { detail: t("err.save") })); }
 }
 async function remove(key: string) {
+  if (stale) return;
   try { await del(key, dataDb); } catch (e) { console.warn(e); }
 }

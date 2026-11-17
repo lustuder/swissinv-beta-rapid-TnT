@@ -120,4 +120,5 @@ export type Route =
   | { name: "room"; pid: string; roomId: string }
   | { name: "element"; pid: string; elementId: string; step: number }
   | { name: "export"; pid: string }
-  | { name: "study" };
+  | { name: "study" }
+  | { name: "label"; code?: string };

@@ -14,8 +14,7 @@ import { floorLabel } from "../domain/fields";
 import { BUILDING_FIELDS, BUILDING_SECTIONS, ELEMENT_FIELD, STUFE1_KEYS, STUFE2_KEYS, STUFE2_SECTIONS, missingElementMuss, splitMulti, type FieldDef } from "../domain/swissinv";
 import type { Element, Project } from "../domain/types";
 import { getLang, label, opt, optShort } from "../i18n";
-import { labelUrl } from "./labelCode";
-import { assignLabelCodes, labelBase } from "./labels";
+import { assignLabelCodes, labelBase, labelItemFor } from "./labels";
 import { renderLabelSheet } from "./labelSheet";
 import { elementsOf, getPhoto } from "./store";
 
@@ -165,13 +164,7 @@ export async function exportLabelsPDF(p: Project) {
   const els = savedElements(p).sort((a, b) => (roomIndex.get(a.roomId) ?? Infinity) - (roomIndex.get(b.roomId) ?? Infinity) || a.createdAt - b.createdAt);
   assignLabelCodes(els);
   const base = labelBase();
-  const blob = await renderLabelSheet(els.map(e => ({
-    code: e.labelCode!,
-    url: labelUrl(e.labelCode!, base),
-    title: e.fields.bauteilId ?? "",
-    lines: [e.fields.bezeichnung ?? "", e.fields.verortung ?? ""],
-    foot: p.name,
-  })));
+  const blob = await renderLabelSheet(els.map(e => labelItemFor(e, p, base)));
   download(baseName(p) + "_Etiketten.pdf", blob);
 }
 

@@ -2,7 +2,9 @@
 import { useSyncExternalStore } from "react";
 import type { Route } from "../domain/types";
 
-let route: Route = (history.state as Route) ?? { name: "start" };
+// A QR label link (?e=<CODE>) starts on the label route, so the app shows "Loading…" until
+// openLabelLink() (lib/labels.ts) opens the element. The start screen does not flash.
+let route: Route = (history.state as Route) ?? (new URLSearchParams(location.search).has("e") ? { name: "label" } : { name: "start" });
 const ls = new Set<() => void>();
 const emit = () => ls.forEach(l => l());
 

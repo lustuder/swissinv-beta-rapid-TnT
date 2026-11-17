@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon, Tick } from "../components/Icon";
+import { LabelDialog } from "../components/LabelDialog";
 import { ModeChip } from "../components/ModeChip";
 import { Progress } from "../components/Progress";
 import { TopBar } from "../components/TopBar";
@@ -8,6 +9,7 @@ import type { Box, Element } from "../domain/types";
 import { t, useLang } from "../i18n";
 import { createElement } from "../lib/elements";
 import { canvasToBlob, cropAround, loadImage, preparePhoto } from "../lib/images";
+import { assignLabelCodes } from "../lib/labels";
 import { home, navigate } from "../lib/nav";
 import { DEFAULT_TOLERANCE, createEngine, maskArea, maskBox, type Point, type SegEngine } from "../lib/segmentation";
 import { elementsOf, photoUrl, putPhoto, saveElement, saveProject, useData } from "../lib/store";
@@ -38,6 +40,7 @@ export function RoomScreen({ pid, roomId }: { pid: string; roomId: string }) {
   const [drag, setDrag] = useState<{ a: Point; b: Point } | null>(null);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
+  const [labelFor, setLabelFor] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const down = useRef<{ pt: Point; x: number; y: number } | null>(null);
 
@@ -201,14 +204,22 @@ export function RoomScreen({ pid, roomId }: { pid: string; roomId: string }) {
         <div className="list">
           {elements.length === 0 ? <div className="empty">{assisted && r.photoId ? t("rm.emptyTap") : t("rm.empty")}</div>
             : elements.map((e, i) => (
-              <button key={e.id} className="li" onClick={() => navigate({ name: "element", pid, elementId: e.id, step: 0 })}>
-                <span className="swatch num" style={{ background: e.color }}>{i + 1}</span>
-                <div className="grow"><div className="t">{e.fields.bezeichnung || e.fields.bauteiltyp || t("rm.unnamed")}</div>
-                  <div className="s">{[e.fields.bauteilId, e.fields.ebkp, e.fields.menge ? `${e.fields.menge} ${e.fields.einheit ?? ""}` : ""].filter(Boolean).join(" · ") || (e.status === "saved" ? "" : t("rm.notDone"))}</div></div>
-                {e.status === "saved" ? <Tick /> : <span className="pill">{t("rm.open")}</span>}
-              </button>
+              <div key={e.id} className="li-row">
+                <button className="li" onClick={() => navigate({ name: "element", pid, elementId: e.id, step: 0 })}>
+                  <span className="swatch num" style={{ background: e.color }}>{i + 1}</span>
+                  <div className="grow"><div className="t">{e.fields.bezeichnung || e.fields.bauteiltyp || t("rm.unnamed")}</div>
+                    <div className="s">{[e.fields.bauteilId, e.fields.ebkp, e.fields.menge ? `${e.fields.menge} ${e.fields.einheit ?? ""}` : ""].filter(Boolean).join(" · ") || (e.status === "saved" ? "" : t("rm.notDone"))}</div></div>
+                  {e.status === "saved" ? <Tick /> : <span className="pill">{t("rm.open")}</span>}
+                </button>
+                <button type="button" className="li-qr" aria-label={t("rm.qrFor", { name: e.fields.bezeichnung || e.fields.bauteilId || String(i + 1) })}
+                  title={t("rm.qrFor", { name: e.fields.bezeichnung || e.fields.bauteilId || String(i + 1) })}
+                  onClick={() => { assignLabelCodes([e]); setLabelFor(e.id); }}><Icon name="qr" /></button>
+              </div>
             ))}
         </div>
+        {labelFor && elements.some(e => e.id === labelFor) && (
+          <LabelDialog e={elements.find(e => e.id === labelFor)!} p={p} onClose={() => setLabelFor(null)} />
+        )}
         <button className="btn block" onClick={() => { const e = createElement(p, r); navigate({ name: "element", pid, elementId: e.id, step: 0 }); }}><Icon name="plus" /> {t("rm.addManual")}</button>
       </main>
     </>

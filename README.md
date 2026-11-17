@@ -64,7 +64,17 @@ Every push to `main` builds the app and publishes it (`.github/workflows/deploy.
 4. **Link:** the QR code holds `<address>?e=<CODE>`. On GitHub Pages, the address is the published app. To print from another address, set `VITE_QR_BASE_URL` in `.env.local`, for example `VITE_QR_BASE_URL=https://bendieklaranjo.github.io/swissinv-beta/`. The Export screen shows the address and warns if a phone outside your network cannot open it.
 5. **A printed label keeps its address forever.** Print labels for real use only from the permanent address.
 
-In this version, a scanned label opens the app at the start screen. Opening the element from the label comes in a later version.
+**One label for one element.** In the room screen, each element row has a QR button on the right, drafts too. It opens a window with the label preview, **Print** and **Download PDF**. The PDF is one page of 70 × 37 mm, for a label printer, or print it at 100 % on A4 and cut it out. If the element has no code yet, it gets one when the window opens. On a PC, **Print** opens the print dialog. On a phone, it opens the PDF in the phone's viewer, which has Print or Share.
+
+**Scan a label.** The phone camera opens the link, and the app opens the element page (photos step). If no element on this device has the code, or more than one element has it, the app shows the label screen. **Main menu → Open a label** takes a typed code or a pasted link.
+
+Limits:
+
+1. A label link needs a network connection to load the app.
+2. The data is only on the device and in the browser that recorded the inventory. On another device, the app shows "This label is not known on this device".
+3. The phone camera opens the link in the default browser. Record the inventory in that browser.
+4. Only one tab writes. A scan opens a new tab, and older tabs then show a notice with **Continue here**. Thus an older tab cannot overwrite newer data.
+5. Opening an element from a label starts the time-study clock, the same as a tap in the room list.
 
 ## The time study
 
@@ -89,17 +99,18 @@ src/
     elements.ts      element creation and suggestions (auto-fill)
     store.ts         IndexedDB storage (projects, elements, photos). The app shows only
                      start, language and menu until the data is loaded, so a form screen
-                     restored after a reload cannot save empty values.
+                     restored after a reload cannot save empty values. Only the newest
+                     tab writes (one writing tab).
     timing.ts        time-study clock
     segmentation/    engine interface + region-growing engine
     export.ts        Excel, ZIP, CSV, PDF, QR labels, time study
     labelCode.ts     QR label codes: new code, check character, link, reading scanned text
-    labelSheet.ts    PDF layout of the label sheet (A4, 3 × 8 labels of 70 × 37 mm)
-    labels.ts        label codes and the store: link address, find and assign codes
+    labelSheet.ts    PDF layout: A4 sheet with 3 × 8 labels, or one 70 × 37 mm label
+    labels.ts        label codes and the store: link address, assign codes, open a scanned link
     images.ts        photo decoding (incl. iPhone HEIC), compression, cropping
     nav.ts           screen navigation
-  screens/           one file per screen
-  components/        shared UI pieces
+  screens/           one file per screen (Label.tsx: open a label by code or link)
+  components/        shared UI pieces (LabelDialog.tsx: the QR label of one element)
 ```
 
 ## Roadmap for SwissInv-Beta

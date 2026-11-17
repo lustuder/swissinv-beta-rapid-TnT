@@ -1,11 +1,15 @@
 /**
- * PDF sheets of QR labels. A4, 3 × 8 labels of 70 × 37 mm (common label sheets).
+ * PDF sheets of QR labels: A4 with 3 × 8 labels of 70 × 37 mm (common label sheets), or one
+ * label on a 70 × 37 mm page (label printer, or print and cut).
  * Each label: the QR code on the left (vector rectangles, sharp at any printer resolution),
  * a text column on the right. jspdf and qrcode load on demand.
  */
 import { formatLabelCode } from "./labelCode";
 
 export interface SheetSpec {
+  /** page size in mm */
+  pageW: number;
+  pageH: number;
   cols: number;
   rows: number;
   /** label size in mm */
@@ -23,7 +27,9 @@ export interface SheetSpec {
 }
 
 /** A4, 3 × 8 labels of 70 × 37 mm, no side margin, 0.5 mm top offset. */
-export const SHEET_70x37: SheetSpec = { cols: 3, rows: 8, labelW: 70, labelH: 37, left: 0, top: 0.5, pad: 5, qr: 27, gap: 4, textW: 29 };
+export const SHEET_70x37: SheetSpec = { pageW: 210, pageH: 297, cols: 3, rows: 8, labelW: 70, labelH: 37, left: 0, top: 0.5, pad: 5, qr: 27, gap: 4, textW: 29 };
+/** One label on a page of 70 × 37 mm, same layout as on the sheet. */
+export const LABEL_70x37: SheetSpec = { pageW: 70, pageH: 37, cols: 1, rows: 1, labelW: 70, labelH: 37, left: 0, top: 0, pad: 5, qr: 27, gap: 4, textW: 29 };
 
 export const perSheet = (s: SheetSpec) => s.cols * s.rows;
 
@@ -108,7 +114,7 @@ const PT = 0.3528; // mm per point
 /** One PDF with all labels; a new page after each full sheet. */
 export async function renderLabelSheet(items: LabelItem[], spec: SheetSpec = SHEET_70x37): Promise<Blob> {
   const [{ jsPDF }, { default: QR }] = await Promise.all([import("jspdf"), import("qrcode")]);
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: spec.pageW > spec.pageH ? "landscape" : "portrait", unit: "mm", format: [spec.pageW, spec.pageH] });
   const measure = (s: string) => doc.getTextWidth(s);
 
   items.forEach((it, i) => {
