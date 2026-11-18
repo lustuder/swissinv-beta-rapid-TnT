@@ -64,7 +64,16 @@ Every push to `main` builds the app and publishes it (`.github/workflows/deploy.
 4. **Link:** the QR code holds `<address>?e=<CODE>`. On GitHub Pages, the address is the published app. To print from another address, set `VITE_QR_BASE_URL` in `.env.local`, for example `VITE_QR_BASE_URL=https://bendieklaranjo.github.io/swissinv-beta/`. The Export screen shows the address and warns if a phone outside your network cannot open it.
 5. **A printed label keeps its address forever.** Print labels for real use only from the permanent address.
 
-**One label for one element.** In the room screen, each element row has a QR button on the right, drafts too. It opens a window with the label preview, **Print** and **Download PDF**. The PDF is one page of 70 × 37 mm, for a label printer, or print it at 100 % on A4 and cut it out. If the element has no code yet, it gets one when the window opens. On a PC, **Print** opens the print dialog. On a phone, it opens the PDF in the phone's viewer, which has Print or Share.
+**One label for one element.** In the room screen, each element row has a QR button on the right, drafts too. It opens a window with the label preview, **Print** and **Download PDF**. The PDF is one page of 70 × 37 mm, for a label printer, or print it at 100 % on A4 and cut it out. If the element has no code yet, it gets one when the window opens. Without Bluetooth (iPhone, Firefox), **Print** works with the PDF: on a PC it opens the print dialog; on a phone it opens the PDF in the phone's viewer, which has Print or Share.
+
+**Zebra label printer over Bluetooth.** In Chrome or Edge (Android, Windows, macOS), **Print** sends the label straight to a Zebra Link-OS printer such as the ZQ511 (203 dpi, 72 mm print width), with no driver and no app.
+
+1. The first **Print** of a session shows Chrome's list of nearby printers. Choose the printer. After that, one tap prints. The app reconnects by itself when the printer was asleep. Where Chrome supports it, the printer is found again after a reload, with no list.
+2. **Change printer** chooses another one. **Print as PDF** prints the PDF as before, for example on an office printer.
+3. The label is sent as a picture of 560 × 296 dots (70 × 37 mm) in ZPL, centred on the 72 mm head. All characters print. Text typed in the app can never act as a printer command.
+4. The first print of a session also switches the printer to ZPL (`device.languages = zpl`), in case it was set to "line print".
+5. **One-time printer setup** in the Zebra Printer Setup Utility app: Bluetooth Low Energy on, media type to match the roll (linerless: continuous, or mark if the roll has black marks), then calibrate the media once.
+6. iPhone browsers have no Bluetooth for websites. There, use **Print** (PDF) or **Download PDF**.
 
 **Scan a label.** The phone camera opens the link, and the app opens the element page (photos step). If no element on this device has the code, or more than one element has it, the app shows the label screen. **Main menu → Open a label** takes a typed code or a pasted link.
 
@@ -106,6 +115,8 @@ src/
     export.ts        Excel, ZIP, CSV, PDF, QR labels, time study
     labelCode.ts     QR label codes: new code, check character, link, reading scanned text
     labelSheet.ts    PDF layout: A4 sheet with 3 × 8 labels, or one 70 × 37 mm label
+    labelZpl.ts      one label as a ZPL job for a 203 dpi Zebra printer (picture + compression)
+    zebra.ts         Zebra printer over Web Bluetooth: choose once, reconnect, send
     labels.ts        label codes and the store: link address, assign codes, open a scanned link
     images.ts        photo decoding (incl. iPhone HEIC), compression, cropping
     nav.ts           screen navigation

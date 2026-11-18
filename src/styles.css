@@ -295,4 +295,5 @@ details.multi.suggested{background:color-mix(in oklab,var(--c4) 13%,var(--surfac
 .label-text>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .label-code{font:600 14px var(--f-mono)}
 .label-foot{margin-top:auto;font-size:11px}
+.label-printer{margin:0;overflow-wrap:anywhere}
 .label-print-frame{position:absolute;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
