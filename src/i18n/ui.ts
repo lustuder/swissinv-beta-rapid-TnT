@@ -265,6 +265,42 @@ export const UI = {
   "st.export": d("Zeitstudie exportieren (.csv)", "Export time study (.csv)"),
   "st.note": d("Unterstützt: Rahmen im Raumfoto, Ausschnitt als erstes Foto und Vorschläge aus dem Bauteiltyp. Manuell: nur Formular. Beide Modi erhalten Registerdaten und Vorgaben. «Übern.» und «Korr.» zählen übernommene bzw. korrigierte Vorschläge.", "Assisted: box on the room photo, crop as first photo and suggestions from the element type. Manual: form only. Both modes get the register data and the defaults. “Kept” and “Fixes” count suggestions left unchanged or corrected."),
 
+  // search, prefill and same elements
+  "sr.building": d("Bauteile im Gebäude suchen", "Search elements in the building"),
+  "sr.room": d("Bauteile in diesem Raum suchen", "Search elements in this room"),
+  "sr.placeholder": d("z.B. Innentür, OG1_OFF_02, Holz", "e.g. interior door, OG1_OFF_02, wood"),
+  "sr.clear": d("Suche löschen", "Clear search"),
+  "sr.found1": d("1 Bauteil gefunden", "1 element found"),
+  "sr.foundN": d("{n} Bauteile gefunden", "{n} elements found"),
+  "sr.none": d("Kein Bauteil passt. Anderes Wort versuchen.", "No element matches. Try another word."),
+  "pf.card": d("Gleiches Bauteil wie anderswo im Gebäude?", "Same element as elsewhere in the building?"),
+  "pf.button": d("Von bestehendem Bauteil übernehmen", "Prefill from an existing element"),
+  "pf.hint": d("Übernimmt alle Angaben ausser Bauteil ID, Verortung und Koordinaten. Fotos werden nicht übernommen. Übernommene Werte sind blau, bis Sie sie ändern.", "Copies everything except Element ID, location and coordinates. Photos are not copied. Copied values are blue until you change them."),
+  "pf.title": d("Bauteil zum Übernehmen wählen", "Choose an element to copy from"),
+  "pf.done": d("Übernommen von {id} · {n} Werte", "Prefilled from {id} · {n} values"),
+  "pf.cancel": d("Abbrechen", "Cancel"),
+  "same.count": d("Gleiches Bauteil: {n} Einträge im Gebäude", "Same element: {n} entries in the building"),
+  "same.countQty": d("Gleiches Bauteil: {n} Einträge im Gebäude · {qty} {unit}", "Same element: {n} entries in the building · {qty} {unit}"),
+  "same.unlink": d("Nicht dasselbe Bauteil", "Not the same element"),
+  "same.pill": d("{n}× im Gebäude", "{n}× in building"),
+
+  // delete from the room list
+  "rm.deleteFor": d("Bauteil {name} löschen", "Delete element {name}"),
+  "rm.deleteQ": d("«{name}» samt Zeitdaten löschen?", "Delete “{name}” and its timing data?"),
+  "rm.deleted": d("Bauteil gelöscht", "Element deleted"),
+
+  // element added with an existing ID (GTIN)
+  "rm.addGtin": d("Bauteil mit vorhandener ID hinzufügen", "Add element with existing ID"),
+  "gt.title": d("Bauteil mit vorhandener ID", "Element with existing ID"),
+  "gt.id": d("GTIN (Bauteil ID)", "GTIN (Element ID)"),
+  "gt.idHint": d("8, 12, 13 oder 14 Ziffern, z.B. vom Strichcode.", "8, 12, 13 or 14 digits, e.g. from the barcode."),
+  "gt.checkBad": d("Die Prüfziffer passt nicht zu einer GTIN. Bitte die Nummer prüfen. Speichern geht trotzdem.", "The check digit does not fit a GTIN. Please check the number. You can still save."),
+  "gt.same": d("Diese GTIN gibt es schon {n}× im Gebäude. Beim Speichern werden sie als gleiches Bauteil verknüpft.", "This GTIN is already in the building {n}×. When you save, they are linked as the same element."),
+  "gt.comment": d("Kommentar", "Comment"),
+  "gt.commentHint": d("Notizen und Links, z.B. zum Datenblatt. Wird als «Weitere Informationen» exportiert.", "Notes and links, e.g. to the data sheet. Exported as “Weitere Informationen”."),
+  "gt.links": d("Links", "Links"),
+  "gt.noId": d("Zum Speichern eine GTIN eingeben.", "Enter a GTIN to save."),
+
   // errors
   "err.photoFormat": d("Dieses Fotoformat kann nicht geöffnet werden. Bitte JPEG oder PNG verwenden.", "This photo format can't be opened. Please use a JPEG or PNG photo."),
   "err.save": d("Speichern fehlgeschlagen. Der Speicher des Geräts ist evtl. voll.", "Saving failed. Your device may be out of storage."),

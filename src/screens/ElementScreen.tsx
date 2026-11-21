@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { DimensionSketch } from "../components/DimensionSketch";
+import { ElementPicker } from "../components/ElementPicker";
 import { FieldInput } from "../components/FieldInput";
 import { Icon } from "../components/Icon";
 import { Progress } from "../components/Progress";
@@ -8,11 +9,12 @@ import { TopBar } from "../components/TopBar";
 import { floorLabel } from "../domain/fields";
 import { RULE_BY_ID, RULE_TYPES, searchTypes, type RuleType, EBKP_CODES, ebkpName } from "../domain/crb";
 import { EBKP_MAIN, ELEMENT_FIELD, PHOTO_SLOTS, STUFE2_SECTIONS, missingElementMuss } from "../domain/swissinv";
-import { label, t, useLang, type UIKey } from "../i18n";
-import { applySuggestions, suggestionsAfterChange } from "../lib/elements";
+import type { Element } from "../domain/types";
+import { label, opt, t, useLang, type UIKey } from "../i18n";
+import { applySuggestions, gtinCheck, linkByGtin, linkPrefill, linksIn, prefillValues, sameCount, sameGtin, suggestionsAfterChange, unlinkElement } from "../lib/elements";
 import { cropAround, loadImage, preparePhoto } from "../lib/images";
 import { home, navigate } from "../lib/nav";
-import { deleteElement, photoUrl, putPhoto, saveElement, useData, usePhotoUrl } from "../lib/store";
+import { deleteElement, elementsOf, photoUrl, putPhoto, saveElement, useData, usePhotoUrl } from "../lib/store";
 import { endClock, liveMs, startClock } from "../lib/timing";
 import { toast } from "../lib/toast";
 import { roomTitle } from "./Floors";
@@ -33,6 +35,7 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [otherType, setOtherType] = useState(() => !!e?.fields.ebkp && !e?.fields.bauteiltyp);
   const [typeQ, setTypeQ] = useState("");
+  const [picking, setPicking] = useState(false);
   const cropRef = useRef<HTMLCanvasElement>(null);
 
   // time-study clock runs while the element pages are open (across all steps)
@@ -88,6 +91,8 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
 
   const save = () => {
     e.fields = { ...fields };
+    const gtin = e.entry === "gtin";
+    if (gtin) e.fields.bauteilId = gtinCheck(e.fields.bauteilId ?? "").digits; // stored without spaces
     endClock(); // books the running time into e.timing.activeMs
     if (e.status !== "saved") {
       e.status = "saved"; e.savedAt = Date.now(); e.timing.firstSavedMs = e.timing.activeMs;
@@ -97,10 +102,29 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
       e.timing.mussTotal = MUSS_COUNT; e.timing.mussFilled = MUSS_COUNT - missingElementMuss(e.fields, e.photoIds.length).length;
     }
     saveElement(e);
-    toast(missing.length === 1 ? t("el.savedOpen1") : missing.length ? t("el.savedOpen", { n: missing.length }) : t("el.saved"));
+    if (gtin) linkByGtin(e); // same GTIN in the building = same element
+    toast(gtin ? t("el.saved") : missing.length === 1 ? t("el.savedOpen1") : missing.length ? t("el.savedOpen", { n: missing.length }) : t("el.saved"));
     navigate({ name: "room", pid, roomId: e.roomId });
   };
   const remove = () => { endClock(); deleteElement(e.id); navigate({ name: "room", pid, roomId: e.roomId }); };
+
+  // "Prefill from an existing element": copied values come in as suggestions (blue) and never
+  // replace what the person typed; Bauteil ID, Verortung, Koordinaten and photos stay this element's own.
+  const canPrefill = e.status === "draft" && elementsOf(p.id).some(x => x.id !== e.id);
+  const prefill = (src: Element) => {
+    const next = { ...fields };
+    const changed = applySuggestions(next, e.suggested, prefillValues(src));
+    setFields(next);
+    setGroup((next.ebkp ?? "").charAt(0));
+    setOtherType(!!next.ebkp && !next.bauteiltyp);
+    e.fields = next;
+    linkPrefill(e, src); // saves e and records the prefill for the time study
+    toast(t("pf.done", { id: src.fields.bauteilId || src.fields.bezeichnung || t("rm.unnamed"), n: changed.length }));
+  };
+  const same = e.groupId ? sameCount(e) : { n: 1 } as ReturnType<typeof sameCount>;
+  const sameText = same.qty !== undefined
+    ? t("same.countQty", { n: same.n, qty: L === "de" ? String(same.qty).replace(".", ",") : String(same.qty), unit: opt(same.unit ?? "") })
+    : t("same.count", { n: same.n });
 
   const F = (k: string, extra?: { hint?: React.ReactNode; readOnly?: boolean; options?: string[]; list?: string }) => (
     <FieldInput key={k} def={ELEMENT_FIELD[k]} value={fields[k] ?? ""} suggested={isSug(k)} onChange={v => change(k, v)} {...extra} />
@@ -115,6 +139,54 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
     </button>
   );
 
+  const deleteBlock = confirmDelete ? (
+    <div className="confirm-inline"><span>{t("el.deleteQ")}</span>
+      <button className="btn sm danger" onClick={remove}>{t("c.delete")}</button><button className="btn sm ghost" onClick={() => setConfirmDelete(false)}>{t("c.keep")}</button></div>
+  ) : <button className="btn ghost danger block" onClick={() => setConfirmDelete(true)}>{t("el.delete")}</button>;
+
+  // Added with an existing ID: one page with only the GTIN (Bauteil ID) and a comment (Weitere Informationen).
+  if (e.entry === "gtin") {
+    const gt = gtinCheck(fields.bauteilId ?? "");
+    const dupes = sameGtin(e, gt.digits).length;
+    const links = linksIn(fields.weitereInfo2 ?? "");
+    return (
+      <>
+        <TopBar title={gt.digits ? `GTIN ${gt.digits}` : t("gt.title")} onBack={toRoom} onHome={() => { e.fields = { ...fields }; saveElement(e); home(pid); }}>
+          <span className="timer" aria-label={t("el.clock")}>{clock}</span>
+        </TopBar>
+        <main className="wrap">
+          <div className="row"><span className="swatch" style={{ background: e.color }} /><span className="small muted">{r && roomTitle(r)} · {floorLabel(r?.floor ?? 0)}</span><span className="pill" style={{ marginLeft: "auto" }}>{mode === "assisted" ? t("mode.assisted") : t("mode.manual")}</span></div>
+          {same.n >= 2 && (
+            <div className="same-row"><span className="same-text">{sameText}</span>
+              <button type="button" className="btn sm ghost" onClick={() => unlinkElement(e)}>{t("same.unlink")}</button></div>
+          )}
+          <h2>{t("gt.title")}</h2>
+          <section className="stack form-section">
+            <div className="field">
+              <label htmlFor="gtin">{t("gt.id")}</label>
+              <input id="gtin" type="text" inputMode="numeric" autoComplete="off" value={fields.bauteilId ?? ""} onChange={ev => change("bauteilId", ev.target.value)} />
+              <span className="small muted">{t("gt.idHint")}</span>
+              {gt.digits && !gt.valid && <span className="small" role="status" style={{ color: "var(--warn)" }}>{t("gt.checkBad")}</span>}
+              {dupes > 0 && same.n < 2 && <span className="small" role="status" style={{ color: "var(--primary)" }}>{t("gt.same", { n: dupes })}</span>}
+            </div>
+            <div className="field">
+              <label htmlFor="gtin-comment">{t("gt.comment")}</label>
+              <textarea id="gtin-comment" rows={5} value={fields.weitereInfo2 ?? ""} onChange={ev => change("weitereInfo2", ev.target.value)} />
+              <span className="small muted">{t("gt.commentHint")}</span>
+            </div>
+            {links.length > 0 && (
+              <div className="gtin-links"><span className="eyebrow">{t("gt.links")}</span>
+                {links.map(u => <a key={u} href={u} target="_blank" rel="noopener noreferrer">{u}</a>)}</div>
+            )}
+          </section>
+          {!gt.digits && <p className="small muted">{t("gt.noId")}</p>}
+          <button type="button" className="btn primary block" disabled={!gt.digits} onClick={save}><Icon name="check" /> {t("el.save")}</button>
+          {deleteBlock}
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <TopBar title={fields.bezeichnung || fields.bauteiltyp || t("el.new")} onBack={() => (step > 0 ? go(step - 1) : toRoom())} onHome={() => { e.fields = { ...fields }; saveElement(e); home(pid); }}>
@@ -123,7 +195,20 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
       <Progress value={step + 1} max={N} label={`${t("c.step", { i: step + 1, n: N })} · ${t(STEPS[step])}`} />
       <main className="wrap">
         <div className="row"><span className="swatch" style={{ background: e.color }} /><span className="tag">{fields.bauteilId}</span><span className="small muted">{r && roomTitle(r)} · {floorLabel(r?.floor ?? 0)}</span><span className="pill" style={{ marginLeft: "auto" }}>{mode === "assisted" ? t("mode.assisted") : t("mode.manual")}</span></div>
+        {same.n >= 2 && (
+          <div className="same-row"><span className="same-text">{sameText}</span>
+            <button type="button" className="btn sm ghost" onClick={() => unlinkElement(e)}>{t("same.unlink")}</button></div>
+        )}
         <h2>{t(STEPS[step])}</h2>
+
+        {step === 0 && canPrefill && (
+          <div className="card prefill-card">
+            <span className="small"><b>{t("pf.card")}</b></span>
+            <button type="button" className="btn block" onClick={() => setPicking(true)}>{t("pf.button")}</button>
+            <p className="small muted" style={{ margin: 0 }}>{t("pf.hint")}</p>
+          </div>
+        )}
+        {picking && <ElementPicker p={p} exclude={e.id} onPick={prefill} onClose={() => setPicking(false)} />}
 
         {step === 0 && (
           <section className="stack" style={{ gap: 8 }}>
@@ -241,10 +326,7 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
         <StepFooter onBack={step > 0 ? () => go(step - 1) : toRoom} onSkip={last ? undefined : () => go(step + 1)}
           onNext={last ? save : () => go(step + 1)} nextLabel={last ? t("el.save") : t("c.next")} />
 
-        {last && (confirmDelete ? (
-          <div className="confirm-inline"><span>{t("el.deleteQ")}</span>
-            <button className="btn sm danger" onClick={remove}>{t("c.delete")}</button><button className="btn sm ghost" onClick={() => setConfirmDelete(false)}>{t("c.keep")}</button></div>
-        ) : <button className="btn ghost danger block" onClick={() => setConfirmDelete(true)}>{t("el.delete")}</button>)}
+        {last && deleteBlock}
       </main>
     </>
   );

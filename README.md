@@ -19,7 +19,13 @@ The app runs fully in **German or English** (chosen after the start screen; Fren
 4. **Room photo → bounding box** (assisted mode) – tap an element for an automatic box, or drag a box around it. The crop becomes the first photo. (Segmentation masks are reserved for BUISI.)
 5. **Element** – six pages: photos (front, side, fixing detail), identification (function in the building → element type, which generates the eBKP number and name and the IFC entity; the name stays free), quantity and dimensions (with a sketch), potential, description and attachments ("Keine" for no documents), Bauteil Stufe 2. Verortung is filled from the room and not asked.
 
-Blue fields are **suggestions** (from the register, the element type or the building-wide values). They stay blue until the person checks or changes them, and the app never overwrites what the person typed.
+6. **Search** – the inventory screen (floors and rooms) has a search bar for all elements of the building; each room has one for its own elements. Case and accents do not matter ("tur" finds "Tür"), and every word must match: name, Bauteil ID, element type (German or English), eBKP, IFC, manufacturer, materials, colour, label code, room and floor. In the room, the rows keep their numbers, so they still match the boxes on the photo.
+7. **Prefill from an existing element** – on the first page of a new element (draft), "Prefill from an existing element" opens a searchable list of the building's elements. Everything is copied except Bauteil ID, Verortung and Koordinaten (they belong to the new location). Photos are not copied. Copied values are blue suggestions and never replace what was already typed. Works in both modes and is recorded for the time study.
+8. **Same element in the building** – a prefilled element is linked to its source. The element pages show "Same element: 3 entries in the building · 6 Stk" (entries, and the total Menge when all entries use the same Einheit); lists show "3× in building". "Not the same element" removes the link and keeps the values.
+9. **Delete from the room list** – each element row has a trash button right of the QR button. It asks first (Delete / Keep) and then deletes the element with its timing data.
+10. **Add element with existing ID** – next to "Add element manually". A single page with only two fields: the **GTIN**, which becomes the Bauteil ID, and a **comment**, exported as "Weitere Informationen", where web addresses become clickable links. The app warns when the GTIN's check digit does not fit (8, 12, 13 or 14 digits) but still saves. Verortung is filled from the room; all other fields stay empty, and building defaults are not applied. Elements with the same GTIN in the building are linked as the same element when saved, so the counter shows them.
+
+Blue fields are **suggestions** (from the register, the element type, the building-wide values or a prefilled element). They stay blue until the person checks or changes them, and the app never overwrites what the person typed.
 
 ### Illustration
 
@@ -47,7 +53,7 @@ Every push to `main` builds the app and publishes it (`.github/workflows/deploy.
 ## Swiss-Inv conformity
 
 - All field names, order, value lists, Muss/Kann and explanations come from `src/domain/swissinv.ts`, transcribed from the template.
-- The Excel export has the sheets **Gebäude** and **Bauteile** in template order and naming. Fields the app adds beyond Swiss-Inv (marked "Zusatz" in the app) go to a separate sheet **Zusatzfelder**: Hauptmaterial, destination project, mode, GWR reference, QR label code ("Etiketten-Code", last column).
+- The Excel export has the sheets **Gebäude** and **Bauteile** in template order and naming. Fields the app adds beyond Swiss-Inv (marked "Zusatz" in the app) go to a separate sheet **Zusatzfelder**: Hauptmaterial, destination project, mode, GWR reference, QR label code ("Etiketten-Code"), and for linked elements "Gleiches Bauteil (Gruppe)" (Bauteil ID of the group's first entry), "Anzahl Einträge gleiches Bauteil", "Menge gleiches Bauteil gesamt" "Vorbefüllt von" (Bauteil ID of the source) and "Erfassungsart" (`GTIN` for an element added with an existing ID, else `Formular`).
 - **Dimensions:** the template lists height, width, depth, length and diameter as Muss. The app counts the group as complete with height + width + depth, or length, or diameter.
 - **Photos:** at least 3 per element, compressed to under 1.5 MB, named `<Bauteil ID>_<n>.jpg` in the ZIP and in "Liste der vorhandenen Fotos".
 - **Bauwerksart** allows several values for mixed-use buildings, joined with "; ".
@@ -90,6 +96,8 @@ Limits:
 - Each element stores its **mode**: `assisted` (bounding box on the room photo, crop as first photo, suggestions from the element type) or `manual` (form only). Both modes get the register data, the building-wide values, and eBKP + IFC generated from the element type.
 - The clock **starts** at the first tap or drag on the room photo (assisted) or at "Add element manually", **pauses** while the app is in the background, and **stops** at the first save (`firstSavedMs`).
 - Also logged: outline taps, suggestions kept, suggestions corrected, required fields filled, number of photos.
+- **Prefill:** `timing.prefilledFrom` holds the element an element was prefilled from (CSV column `prefilled_from`, the source's Bauteil ID; empty if not prefilled). Prefilled values count as suggestions, so they appear in "suggestions kept/corrected". Filter on `prefilled_from` to compare like with like.
+- **Entry:** the CSV column `entry` is `gtin` for elements added with an existing ID (GTIN + comment only) and `form` for the full form. Leave out `gtin` rows when comparing assisted and manual.
 - Results: **Time study results** in the menu, its CSV export, and the "Zeitstudie" sheet in the Excel export.
 
 ## How the app is organised
@@ -105,7 +113,8 @@ src/
   lib/
     gwr.ts           Swiss building register (geo.admin.ch) search and mapping
     osm.ts           OpenStreetMap (Nominatim) address search outside Switzerland – only on button press, max 1 request/s
-    elements.ts      element creation and suggestions (auto-fill)
+    elements.ts      element creation, suggestions (auto-fill), prefill and linked same elements
+    search.ts        element search (accents and case ignored, every word must match)
     store.ts         IndexedDB storage (projects, elements, photos). The app shows only
                      start, language and menu until the data is loaded, so a form screen
                      restored after a reload cannot save empty values. Only the newest
@@ -121,7 +130,8 @@ src/
     images.ts        photo decoding (incl. iPhone HEIC), compression, cropping
     nav.ts           screen navigation
   screens/           one file per screen (Label.tsx: open a label by code or link)
-  components/        shared UI pieces (LabelDialog.tsx: the QR label of one element)
+  components/        shared UI pieces (LabelDialog.tsx: the QR label of one element;
+                     ElementSearch.tsx: search bar and result list; ElementPicker.tsx: choose an element to prefill from)
 ```
 
 ## Roadmap for SwissInv-Beta

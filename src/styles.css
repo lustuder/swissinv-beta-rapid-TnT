@@ -297,3 +297,19 @@ details.multi.suggested{background:color-mix(in oklab,var(--c4) 13%,var(--surfac
 .label-foot{margin-top:auto;font-size:11px}
 .label-printer{margin:0;overflow-wrap:anywhere}
 .label-print-frame{position:absolute;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
+/* element search, prefill and same elements */
+.search-row{display:flex;gap:6px;align-items:center}
+.search-row input{flex:1;min-width:0}
+.search-clear{flex:none;width:44px;min-height:44px;padding:0;font-size:22px;line-height:1}
+.pill.same{color:var(--primary)}
+.same-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+.prefill-card{display:flex;flex-direction:column;gap:8px}
+.picker-list{max-height:55vh;overflow:auto}
+.same-text{color:var(--primary);font-weight:700}
+/* delete from the room list */
+.li-del{flex:none;width:52px;min-height:44px;display:grid;place-items:center;border:0;border-left:1px solid var(--line);background:none;color:var(--danger);cursor:pointer}
+.li-del:hover{background:var(--sunk)}
+.li-del svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.row-confirm{padding:10px 14px;align-items:center}
+/* element added with an existing ID */
+.gtin-links{display:flex;flex-direction:column;gap:4px;font-size:14px;overflow-wrap:anywhere}

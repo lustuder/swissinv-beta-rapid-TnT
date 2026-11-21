@@ -27,7 +27,7 @@ SwissInv-Beta is a phone-first web app (Vite + React + TypeScript) for reuse inv
 2. **Swiss-Inv conformity.** Field names, order and value lists follow the template exactly. The "Gebäude" and "Bauteile" export sheets contain only Swiss-Inv fields, in template order. App additions are marked `extra: true` and go to the "Zusatzfelder" sheet.
 3. **Timing semantics are research data.** `Timing.activeMs` counts only while the element screen is open and the app is visible. Outline time before the element exists is handed over via `segStart`. `firstSavedMs` is frozen at the first save. Do not change these definitions without updating the README and the export column names. Prefer adding new fields over changing existing ones.
 4. **Mode is stored per element** (`timing.mode`), at creation time. Catalogue suggestions only apply in assisted mode; register data and building defaults apply in both.
-5. **Room tags** follow `Floor_Use_Number`, e.g. `OG1_OFF_02`. Bauteil IDs are `<room tag>-<nn>`.
+5. **Room tags** follow `Floor_Use_Number`, e.g. `OG1_OFF_02`. Bauteil IDs are `<room tag>-<nn>`, except for elements added with an existing ID (`entry: "gtin"`): there the Bauteil ID is the GTIN, and the same GTIN may appear more than once (linked as the same element).
 6. **Terminology.** Say *element* (Bauteil) or *product* (Bauprodukt), never "component", in UI copy and docs. "Component" is only used for React components in code.
 7. **No vision models or AI calls** in this repo – that belongs to BUISI.
 8. **Both languages, always.** The UI is fully German or fully English. Stored values and Excel/CSV column names stay in the official German of the template; only the display is translated.

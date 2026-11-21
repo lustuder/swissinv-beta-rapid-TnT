@@ -82,6 +82,8 @@ export interface Timing {
   corrections?: number;
   mussFilled?: number;
   mussTotal?: number;
+  /** Id of the element this one was prefilled from ("Prefill from an existing element"), if any. */
+  prefilledFrom?: string;
 }
 
 export interface Element {
@@ -104,6 +106,10 @@ export interface Element {
   savedAt?: number;
   /** Permanent code of the element's QR label (8 characters, see lib/labelCode.ts). Not in `fields`. */
   labelCode?: string;
+  /** Elements with the same groupId are the same building element (linked by prefill). App field, not Swiss-Inv. */
+  groupId?: string;
+  /** "gtin": added with an existing ID (GTIN in Bauteil ID, comment in Weitere Informationen); shows only those two. Missing = the normal form. */
+  entry?: "gtin";
 }
 
 export type Route =

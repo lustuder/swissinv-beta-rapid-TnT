@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ElementResults, SearchBar } from "../components/ElementSearch";
 import { Icon } from "../components/Icon";
 import { ModeChip } from "../components/ModeChip";
 import { Progress } from "../components/Progress";
@@ -7,6 +8,7 @@ import { USES, floorLabel, floorsOf } from "../domain/fields";
 import type { Room } from "../domain/types";
 import { getLang, t, useLang } from "../i18n";
 import { home, navigate } from "../lib/nav";
+import { searchElements } from "../lib/search";
 import { elementsOf, saveProject, useData } from "../lib/store";
 
 /** Room name for display: the room's own name, else its use in the UI language. */
@@ -18,6 +20,7 @@ export function Floors({ pid }: { pid: string }) {
   const p = useData().projects[pid];
   const floors = p ? floorsOf(p.info) : [0];
   const [floor, setFloorState] = useState(() => (p && floors.includes(p.lastFloor ?? 0) ? p.lastFloor ?? 0 : 0));
+  const [q, setQ] = useState("");
   if (!p) return null;
   const setFloor = (f: number) => { setFloorState(f); p.lastFloor = f; saveProject(p); };
 
@@ -28,6 +31,8 @@ export function Floors({ pid }: { pid: string }) {
   const gap = 34, h = 40 + gap * (vis.length - 1) + 40;
   const rooms = p.rooms.filter(r => r.floor === floor);
   const els = elementsOf(p.id), saved = els.filter(e => e.status === "saved").length;
+  const searching = q.trim() !== "";
+  const found = searching ? searchElements(els, p, q) : [];
 
   return (
     <>
@@ -36,6 +41,13 @@ export function Floors({ pid }: { pid: string }) {
       </TopBar>
       <Progress value={saved} max={Math.max(1, els.length)} label={t("inv.progress", { saved, total: els.length })} />
       <main className="wrap">
+        <SearchBar id="search-building" label={t("sr.building")} value={q} onChange={setQ} />
+        {searching ? (
+          <>
+            <div className="section-title"><h3>{found.length === 1 ? t("sr.found1") : t("sr.foundN", { n: found.length })}</h3></div>
+            <ElementResults els={found} p={p} onPick={e => navigate({ name: "element", pid, elementId: e.id, step: 0 })} />
+          </>
+        ) : <>
         <div className="row">
           <div className="grow"><span className="eyebrow">{t("fl.select")}</span></div>
           <button className="btn sm ghost" onClick={() => navigate({ name: "defaults", pid })}>{t("fl.defaults")}</button>
@@ -72,6 +84,7 @@ export function Floors({ pid }: { pid: string }) {
           })}
         </div>
         <button className="btn block" onClick={() => navigate({ name: "addRoom", pid, floor })}><Icon name="plus" /> {t("fl.addRoom")}</button>
+        </>}
         <button className="btn ghost block" onClick={() => navigate({ name: "export", pid })}><Icon name="save" /> {t("fl.export")}</button>
       </main>
     </>
