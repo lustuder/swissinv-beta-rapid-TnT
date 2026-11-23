@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { floorLabel } from "../domain/fields";
 import type { Element, Project } from "../domain/types";
 import { t } from "../i18n";
 import { displayName, sameCount } from "../lib/elements";
 import { roomTitle } from "../screens/Floors";
+import { GroupBar, groupItems, groupMembers, toggleIn, type ListItem } from "./ElementGroup";
 import { Tick } from "./Icon";
 
 /** Search field for elements, with a clear button (type="search" has none on every phone). */
@@ -25,23 +27,32 @@ export function SamePill({ e }: { e: Element }) {
   return n >= 2 ? <span className="pill same">{t("same.pill", { n })}</span> : null;
 }
 
-/** Elements as a list: name, Bauteil ID, room and floor (optional), linked count, saved tick. */
-export function ElementResults({ els, p, onPick, showRoom = true }: { els: Element[]; p: Project; onPick: (e: Element) => void; showRoom?: boolean }) {
+/**
+ * Elements as a list: name, Bauteil ID, room and floor (optional), linked count, saved tick.
+ * grouped: same elements become one bar that opens to all their entries in the building.
+ */
+export function ElementResults({ els, p, onPick, showRoom = true, grouped = false }: { els: Element[]; p: Project; onPick: (e: Element) => void; showRoom?: boolean; grouped?: boolean }) {
+  const [open, setOpen] = useState<Set<string>>(() => new Set());
   if (els.length === 0) return <div className="list"><div className="empty">{t("sr.none")}</div></div>;
+  const where = (e: Element) => { const r = p.rooms.find(x => x.id === e.roomId); return r ? `${roomTitle(r)} · ${floorLabel(r.floor)}` : ""; };
+  const rowOf = (e: Element, child = false) => (
+    <button key={e.id} type="button" className={"li" + (child ? " child" : "")} onClick={() => onPick(e)}>
+      <span className="swatch" style={{ background: e.color }} />
+      {child
+        ? <div className="grow"><div className="t">{e.fields.bauteilId || displayName(e)}</div><div className="s">{where(e)}</div></div>
+        : <div className="grow"><div className="t">{displayName(e)}</div><div className="s">{[e.fields.bauteilId, showRoom ? where(e) : ""].filter(Boolean).join(" · ")}</div></div>}
+      {!child && <SamePill e={e} />}
+      {e.status === "saved" ? <Tick /> : <span className="pill">{t("rm.open")}</span>}
+    </button>
+  );
+  const items: ListItem[] = grouped ? groupItems(els) : els.map(e => ({ kind: "one", e }));
   return (
     <div className="list">
-      {els.map(e => {
-        const r = p.rooms.find(x => x.id === e.roomId);
-        const sub = [e.fields.bauteilId, showRoom && r ? `${roomTitle(r)} · ${floorLabel(r.floor)}` : ""].filter(Boolean).join(" · ");
-        return (
-          <button key={e.id} type="button" className="li" onClick={() => onPick(e)}>
-            <span className="swatch" style={{ background: e.color }} />
-            <div className="grow"><div className="t">{displayName(e)}</div><div className="s">{sub}</div></div>
-            <SamePill e={e} />
-            {e.status === "saved" ? <Tick /> : <span className="pill">{t("rm.open")}</span>}
-          </button>
-        );
-      })}
+      {items.map(it => it.kind === "one" ? rowOf(it.e) : (
+        <GroupBar key={it.id} id={it.id} first={it.first} open={open.has(it.id)} onToggle={() => setOpen(s => toggleIn(s, it.id))}>
+          {groupMembers(it.first, p).map(m => rowOf(m, true))}
+        </GroupBar>
+      ))}
     </div>
   );
 }

@@ -59,6 +59,7 @@ export const UI = {
   "mode.assistedSub": d("Markieren im Foto + Vorschläge", "Box on photo + suggestions"),
   "mode.manual": d("Manuell", "Manual"),
   "mode.manualSub": d("Basislinie, nur Formular", "Baseline, form only"),
+  "mode.explain": d("Unterstützt: Bauteil im Raumfoto markieren, die App schlägt Werte vor (blau). Manuell: nur das Formular – die Vergleichsbasis der Zeitstudie.", "Assisted: mark the element on the room photo and the app proposes values (blue). Manual: the form only – the baseline for the time study."),
   "mode.title": d("Erfassungsmodus", "Inventory mode"),
   "mode.question": d("Welcher Modus für die nächsten Bauteile?", "Which mode for the next elements?"),
   "mode.text": d("Bereits erfasste Bauteile behalten ihren Modus. Wechseln Sie pro Raum oder Gebäudeteil, damit beide Modi vergleichbare Bauteile erfassen.", "Elements already captured keep their mode. Switch per room or building part so both modes see comparable elements."),
@@ -148,7 +149,7 @@ export const UI = {
   "rm.leaked": d("Der automatische Rahmen ist zu gross geraten. Ziehen Sie den Rahmen von Hand oder senken Sie die Toleranz.", "The automatic box came out too large. Drag the box by hand or lower the tolerance."),
   "rm.tolerance": d("Toleranz", "Tolerance"),
   "rm.discard": d("Verwerfen", "Discard"),
-  "rm.create": d("Bauteil anlegen", "Create element"),
+  "rm.create": d("Bauteil aus Raumfoto anlegen", "Create element from room photo"),
   "rm.retake": d("Neues Foto", "Retake"),
   "rm.manualMode": d("Manueller Modus: Markieren ist aus. Bauteile unten von Hand hinzufügen.", "Manual mode: boxes are off. Add each element by hand below."),
   "rm.list": d("In diesem Raum haben diese Bauteile eine Nachfrage", "Within this room these elements have market demand"),
@@ -169,7 +170,7 @@ export const UI = {
   "el.s.dims": d("Menge und Abmessungen", "Quantity and dimensions"),
   "el.s.potential": d("Potenzial", "Potential"),
   "el.s.desc": d("Beschreibung und Anhänge", "Description and attachments"),
-  "el.s.stufe2": d("Bauteil Stufe 2", "Element level 2"),
+  "el.s.stufe2": d("Bauteil Stufe 2 – Erweiterte Angaben", "Element level 2 – extended details"),
   "el.photosMin": d("mind. 3", "min. 3"),
   "el.photoCrop": d("Der Ausschnitt aus dem Raumfoto ist als Frontalansicht eingefügt; Sie können ihn ersetzen. ", "The crop from the room photo was added as the front view; you can replace it. "),
   "el.photoSize": d("Fotos werden auf unter 1,5 MB verkleinert.", "Photos are compressed to under 1.5 MB."),
@@ -288,6 +289,19 @@ export const UI = {
   "rm.deleteFor": d("Bauteil {name} löschen", "Delete element {name}"),
   "rm.deleteQ": d("«{name}» samt Zeitdaten löschen?", "Delete “{name}” and its timing data?"),
   "rm.deleted": d("Bauteil gelöscht", "Element deleted"),
+
+  // delete rooms and projects
+  "fl.deleteRoom": d("Raum {name} löschen", "Delete room {name}"),
+  "fl.deleteRoomQ": d("Raum «{name}» mit {n} Bauteilen samt Fotos und Zeitdaten löschen?", "Delete room “{name}” with {n} elements, their photos and timing data?"),
+  "fl.roomDeleted": d("Raum gelöscht", "Room deleted"),
+  "menu.deleteProject": d("Projekt {name} löschen", "Delete project {name}"),
+  "menu.deleteQ": d("Projekt «{name}» mit {n} Bauteilen samt Fotos und Zeitdaten löschen? Vorher exportieren, falls die Daten noch gebraucht werden.", "Delete project “{name}” with {n} elements, their photos and timing data? Export first if you still need the data."),
+  "menu.deleted": d("Projekt gelöscht", "Project deleted"),
+
+  // same elements as one bar
+  "grp.open": d("Alle Einträge zeigen", "Show all entries"),
+  "grp.close": d("Einträge ausblenden", "Hide entries"),
+  "grp.here": d("dieser Raum", "this room"),
 
   // element added with an existing ID (GTIN)
   "rm.addGtin": d("Bauteil mit vorhandener ID hinzufügen", "Add element with existing ID"),

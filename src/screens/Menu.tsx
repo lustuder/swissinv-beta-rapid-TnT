@@ -1,15 +1,18 @@
+import { useState } from "react";
 import { BuildingIllustration } from "../components/BuildingIllustration";
 import { Icon } from "../components/Icon";
 import { TopBar } from "../components/TopBar";
 import { t, useLang } from "../i18n";
 import { navigate } from "../lib/nav";
-import { elementsOf, useData } from "../lib/store";
+import { deleteProject, elementsOf, useData } from "../lib/store";
+import { toast } from "../lib/toast";
 
 /** Main menu: start or resume a project, time study. */
 export function Menu() {
   const L = useLang();
   const { ready, projects } = useData();
   const list = Object.values(projects).sort((a, b) => b.updatedAt - a.updatedAt);
+  const [confirmDel, setConfirmDel] = useState<string | null>(null);
   return (
     <>
       <TopBar title="SwissInv-Beta">
@@ -28,14 +31,25 @@ export function Menu() {
           {!ready ? <div className="empty status busy">{t("menu.loading")}</div>
             : list.length === 0 ? <div className="empty">{t("menu.empty")}</div>
             : list.map(p => {
-              const saved = elementsOf(p.id).filter(e => e.status === "saved").length;
+              const all = elementsOf(p.id), saved = all.filter(e => e.status === "saved").length;
               const b = p.building;
               const sub = [[b.adresse, b.hausnummer].filter(Boolean).join(" "), [b.plz, b.ort].filter(Boolean).join(" "), b.egid && `EGID ${b.egid}`].filter(Boolean).join(" · ");
-              return (
-                <button key={p.id} className="li" onClick={() => navigate({ name: "hub", pid: p.id })}>
-                  <div className="grow"><div className="t">{p.name}</div><div className="s">{sub}</div></div>
-                  <span className={"pill" + (saved ? " ok" : "")}>{t("menu.elements", { n: saved })}</span>
-                </button>
+              const name = p.name || "–";
+              return confirmDel === p.id ? (
+                <div key={p.id} className="li-row row-confirm">
+                  <div className="confirm-inline"><span>{t("menu.deleteQ", { name, n: all.length })}</span>
+                    <button type="button" className="btn sm danger" onClick={() => { setConfirmDel(null); deleteProject(p.id); toast(t("menu.deleted")); }}>{t("c.delete")}</button>
+                    <button type="button" className="btn sm ghost" onClick={() => setConfirmDel(null)}>{t("c.keep")}</button></div>
+                </div>
+              ) : (
+                <div key={p.id} className="li-row">
+                  <button className="li" onClick={() => navigate({ name: "hub", pid: p.id })}>
+                    <div className="grow"><div className="t">{p.name}</div><div className="s">{sub}</div></div>
+                    <span className={"pill" + (saved ? " ok" : "")}>{t("menu.elements", { n: saved })}</span>
+                  </button>
+                  <button type="button" className="li-del" aria-label={t("menu.deleteProject", { name })} title={t("menu.deleteProject", { name })}
+                    onClick={() => setConfirmDel(p.id)}><Icon name="trash" /></button>
+                </div>
               );
             })}
         </div>

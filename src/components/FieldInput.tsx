@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DOKUMENTE_KEINE, joinMulti, splitMulti, type FieldDef } from "../domain/swissinv";
+import { DOKUMENTE_KEINE, joinMulti, splitMulti, type FieldDef, type Req } from "../domain/swissinv";
 import { hint as hintOf, info as infoOf, label, opt, optShort, t } from "../i18n";
 
 interface Props {
@@ -15,14 +15,17 @@ interface Props {
   list?: string;
   /** Override the option list (e.g. a filtered eBKP list). */
   options?: string[];
+  /** Override the Muss/Kann shown (e.g. a dimension that is no longer needed). The field definition stays as it is. */
+  req?: Req;
 }
 
 /** One Swiss-Inv field: label in the UI language, Muss/Kann, info button with the template's explanation. */
-export function FieldInput({ def, value, suggested, onChange, hint, readOnly, list, options }: Props) {
+export function FieldInput({ def, value, suggested, onChange, hint, readOnly, list, options, req: reqOverride }: Props) {
   const [showInfo, setShowInfo] = useState(false);
   const id = "f_" + def.key;
   const cls = suggested ? "suggested" : undefined;
   const opts = options ?? def.options ?? [];
+  const req = reqOverride ?? def.req;
   const infoText = infoOf(def);
   const hintText = hint ?? hintOf(def);
   let input;
@@ -55,7 +58,7 @@ export function FieldInput({ def, value, suggested, onChange, hint, readOnly, li
       <div className="flabel-row">
         <label htmlFor={id}>{label(def)}</label>
         {def.extra && <span className="req">{t("c.extra")}</span>}
-        <span className={"req" + (def.req === "muss" ? " muss" : "")}>{def.req === "muss" ? t("c.muss") : t("c.kann")}</span>
+        <span className={"req" + (req === "muss" ? " muss" : "")}>{req === "muss" ? t("c.muss") : t("c.kann")}</span>
         {infoText && (
           <button type="button" className="info-btn" aria-expanded={showInfo} aria-label={t("c.infoAbout", { label: label(def) })} onClick={() => setShowInfo(!showInfo)}>i</button>
         )}

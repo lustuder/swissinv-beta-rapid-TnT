@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { SamePill, SearchBar } from "../components/ElementSearch";
+import { GroupBar, groupItems, groupMembers, toggleIn } from "../components/ElementGroup";
+import { SearchBar } from "../components/ElementSearch";
 import { Icon, Tick } from "../components/Icon";
 import { LabelDialog } from "../components/LabelDialog";
 import { ModeChip } from "../components/ModeChip";
@@ -45,6 +46,7 @@ export function RoomScreen({ pid, roomId }: { pid: string; roomId: string }) {
   const [labelFor, setLabelFor] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const down = useRef<{ pt: Point; x: number; y: number } | null>(null);
 
@@ -151,7 +153,48 @@ export function RoomScreen({ pid, roomId }: { pid: string; roomId: string }) {
     finally { setBusy(false); }
   };
 
-  const hintText = pending ? (pending.auto?.leaked ? t("rm.leaked") : t("rm.check")) : status || t("rm.hint");
+  // Element list: the search filters first, then same elements become one bar.
+  // The number stays the one of the box on the room photo.
+  const num = new Map(elements.map((e, i) => [e.id, i + 1]));
+  const items = groupItems(elements.filter(e => matchesElement(e, p, q)));
+  const tick = (e: Element) => (e.status === "saved" ? <Tick /> : <span className="pill">{t("rm.open")}</span>);
+  const qrName = (e: Element) => e.fields.bezeichnung || e.fields.bauteilId || String(num.get(e.id));
+  /** An element of this room: number, name, QR label, delete (asks first). Indented inside a bar. */
+  const row = (e: Element, child = false) => confirmDel === e.id ? (
+    <div key={e.id} className={"li-row row-confirm" + (child ? " child" : "")}>
+      <div className="confirm-inline"><span>{t("rm.deleteQ", { name: displayName(e) })}</span>
+        <button type="button" className="btn sm danger" onClick={() => { setConfirmDel(null); deleteElement(e.id); toast(t("rm.deleted")); }}>{t("c.delete")}</button>
+        <button type="button" className="btn sm ghost" onClick={() => setConfirmDel(null)}>{t("c.keep")}</button></div>
+    </div>
+  ) : (
+    <div key={e.id} className={"li-row" + (child ? " child" : "")}>
+      <button className="li" onClick={() => navigate({ name: "element", pid, elementId: e.id, step: 0 })}>
+        <span className="swatch num" style={{ background: e.color }}>{num.get(e.id)}</span>
+        <div className="grow"><div className="t">{child ? e.fields.bauteilId || displayName(e) : displayName(e)}</div>
+          <div className="s">{child ? t("grp.here") : (e.entry === "gtin" ? (e.fields.weitereInfo2 ?? "").split("\n")[0]
+            : [e.fields.bauteilId, e.fields.ebkp, e.fields.menge ? `${e.fields.menge} ${e.fields.einheit ?? ""}` : ""].filter(Boolean).join(" · ")) || (e.status === "saved" ? "" : t("rm.notDone"))}</div></div>
+        {tick(e)}
+      </button>
+      <button type="button" className="li-qr" aria-label={t("rm.qrFor", { name: qrName(e) })}
+        title={t("rm.qrFor", { name: qrName(e) })}
+        onClick={() => { assignLabelCodes([e]); setLabelFor(e.id); }}><Icon name="qr" /></button>
+      <button type="button" className="li-del" aria-label={t("rm.deleteFor", { name: displayName(e) })} title={t("rm.deleteFor", { name: displayName(e) })}
+        onClick={() => setConfirmDel(e.id)}><Icon name="trash" /></button>
+    </div>
+  );
+  /** An entry of the same element in another room: shows where it is, opens it. */
+  const otherRow = (e: Element) => {
+    const rr = p.rooms.find(x => x.id === e.roomId);
+    return (
+      <button key={e.id} type="button" className="li child" onClick={() => navigate({ name: "element", pid, elementId: e.id, step: 0 })}>
+        <span className="swatch" style={{ background: e.color }} />
+        <div className="grow"><div className="t">{e.fields.bauteilId || displayName(e)}</div><div className="s">{rr ? `${roomTitle(rr)} · ${floorLabel(rr.floor)}` : ""}</div></div>
+        {tick(e)}
+      </button>
+    );
+  };
+
+  const hintText = pending ?(pending.auto?.leaked ? t("rm.leaked") : t("rm.check")) : status || t("rm.hint");
 
   return (
     <>
@@ -204,43 +247,26 @@ export function RoomScreen({ pid, roomId }: { pid: string; roomId: string }) {
           </>
         )}
 
+        <div className="row">
+          <button className="btn grow" onClick={() => { const e = createElement(p, r); navigate({ name: "element", pid, elementId: e.id, step: 0 }); }}><Icon name="plus" /> {t("rm.addManual")}</button>
+          <button className="btn grow" onClick={() => { const e = createGtinElement(p, r); navigate({ name: "element", pid, elementId: e.id, step: 0 }); }}><Icon name="plus" /> {t("rm.addGtin")}</button>
+        </div>
+
         <div className="section-title"><h3>{t("rm.list")}</h3></div>
         {elements.length > 0 && <SearchBar id="search-room" label={t("sr.room")} value={q} onChange={setQ} />}
         <div className="list">
           {elements.length === 0 ? <div className="empty">{assisted && r.photoId ? t("rm.emptyTap") : t("rm.empty")}</div>
-            // filtered by the search; the number stays the one of the box on the photo
-            : !elements.some(e => matchesElement(e, p, q)) ? <div className="empty">{t("sr.none")}</div>
-            : elements.map((e, i) => !matchesElement(e, p, q) ? null : confirmDel === e.id ? (
-              <div key={e.id} className="li-row row-confirm">
-                <div className="confirm-inline"><span>{t("rm.deleteQ", { name: displayName(e) })}</span>
-                  <button type="button" className="btn sm danger" onClick={() => { setConfirmDel(null); deleteElement(e.id); toast(t("rm.deleted")); }}>{t("c.delete")}</button>
-                  <button type="button" className="btn sm ghost" onClick={() => setConfirmDel(null)}>{t("c.keep")}</button></div>
-              </div>
-            ) : (
-              <div key={e.id} className="li-row">
-                <button className="li" onClick={() => navigate({ name: "element", pid, elementId: e.id, step: 0 })}>
-                  <span className="swatch num" style={{ background: e.color }}>{i + 1}</span>
-                  <div className="grow"><div className="t">{displayName(e)}</div>
-                    <div className="s">{(e.entry === "gtin" ? (e.fields.weitereInfo2 ?? "").split("\n")[0]
-                      : [e.fields.bauteilId, e.fields.ebkp, e.fields.menge ? `${e.fields.menge} ${e.fields.einheit ?? ""}` : ""].filter(Boolean).join(" · ")) || (e.status === "saved" ? "" : t("rm.notDone"))}</div></div>
-                  <SamePill e={e} />
-                  {e.status === "saved" ? <Tick /> : <span className="pill">{t("rm.open")}</span>}
-                </button>
-                <button type="button" className="li-qr" aria-label={t("rm.qrFor", { name: e.fields.bezeichnung || e.fields.bauteilId || String(i + 1) })}
-                  title={t("rm.qrFor", { name: e.fields.bezeichnung || e.fields.bauteilId || String(i + 1) })}
-                  onClick={() => { assignLabelCodes([e]); setLabelFor(e.id); }}><Icon name="qr" /></button>
-                <button type="button" className="li-del" aria-label={t("rm.deleteFor", { name: displayName(e) })} title={t("rm.deleteFor", { name: displayName(e) })}
-                  onClick={() => setConfirmDel(e.id)}><Icon name="trash" /></button>
-              </div>
+            : items.length === 0 ? <div className="empty">{t("sr.none")}</div>
+            : items.map(it => it.kind === "one" ? row(it.e) : (
+              <GroupBar key={it.id} id={it.id} first={it.first} open={openGroups.has(it.id)} onToggle={() => setOpenGroups(s => toggleIn(s, it.id))}
+                badges={it.hits.map(h => <span key={h.id} className="swatch num" style={{ background: h.color }}>{num.get(h.id)}</span>)}>
+                {groupMembers(it.first, p).map(m => (m.roomId === r.id ? row(m, true) : otherRow(m)))}
+              </GroupBar>
             ))}
         </div>
         {labelFor && elements.some(e => e.id === labelFor) && (
           <LabelDialog e={elements.find(e => e.id === labelFor)!} p={p} onClose={() => setLabelFor(null)} />
         )}
-        <div className="row">
-          <button className="btn grow" onClick={() => { const e = createElement(p, r); navigate({ name: "element", pid, elementId: e.id, step: 0 }); }}><Icon name="plus" /> {t("rm.addManual")}</button>
-          <button className="btn grow" onClick={() => { const e = createGtinElement(p, r); navigate({ name: "element", pid, elementId: e.id, step: 0 }); }}><Icon name="plus" /> {t("rm.addGtin")}</button>
-        </div>
       </main>
     </>
   );

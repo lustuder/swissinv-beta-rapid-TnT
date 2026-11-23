@@ -9,7 +9,8 @@ import type { Room } from "../domain/types";
 import { getLang, t, useLang } from "../i18n";
 import { home, navigate } from "../lib/nav";
 import { searchElements } from "../lib/search";
-import { elementsOf, saveProject, useData } from "../lib/store";
+import { deleteRoom, elementsOf, saveProject, useData } from "../lib/store";
+import { toast } from "../lib/toast";
 
 /** Room name for display: the room's own name, else its use in the UI language. */
 export const roomTitle = (r: Room) => r.name || (USES.find(u => u.code === r.useCode)?.[getLang()] ?? r.useLabel);
@@ -21,6 +22,7 @@ export function Floors({ pid }: { pid: string }) {
   const floors = p ? floorsOf(p.info) : [0];
   const [floor, setFloorState] = useState(() => (p && floors.includes(p.lastFloor ?? 0) ? p.lastFloor ?? 0 : 0));
   const [q, setQ] = useState("");
+  const [confirmDel, setConfirmDel] = useState<string | null>(null);
   if (!p) return null;
   const setFloor = (f: number) => { setFloorState(f); p.lastFloor = f; saveProject(p); };
 
@@ -45,7 +47,7 @@ export function Floors({ pid }: { pid: string }) {
         {searching ? (
           <>
             <div className="section-title"><h3>{found.length === 1 ? t("sr.found1") : t("sr.foundN", { n: found.length })}</h3></div>
-            <ElementResults els={found} p={p} onPick={e => navigate({ name: "element", pid, elementId: e.id, step: 0 })} />
+            <ElementResults grouped els={found} p={p} onPick={e => navigate({ name: "element", pid, elementId: e.id, step: 0 })} />
           </>
         ) : <>
         <div className="row">
@@ -75,11 +77,22 @@ export function Floors({ pid }: { pid: string }) {
         <div className="list">
           {rooms.length === 0 ? <div className="empty">{t("fl.noRooms")}</div> : rooms.map(r => {
             const rc = elementsOf(p.id, r.id), sv = rc.filter(e => e.status === "saved").length;
-            return (
-              <button key={r.id} className="li" onClick={() => navigate({ name: "room", pid, roomId: r.id })}>
-                <div className="grow"><div className="t">{roomTitle(r)}</div><div className="s tag">{r.tag}</div></div>
-                <span className={"pill" + (sv && sv === rc.length ? " ok" : "")}>{sv}/{rc.length}</span>
-              </button>
+            const name = roomTitle(r) || r.tag;
+            return confirmDel === r.id ? (
+              <div key={r.id} className="li-row row-confirm">
+                <div className="confirm-inline"><span>{t("fl.deleteRoomQ", { name, n: rc.length })}</span>
+                  <button type="button" className="btn sm danger" onClick={() => { setConfirmDel(null); deleteRoom(p, r.id); toast(t("fl.roomDeleted")); }}>{t("c.delete")}</button>
+                  <button type="button" className="btn sm ghost" onClick={() => setConfirmDel(null)}>{t("c.keep")}</button></div>
+              </div>
+            ) : (
+              <div key={r.id} className="li-row">
+                <button className="li" onClick={() => navigate({ name: "room", pid, roomId: r.id })}>
+                  <div className="grow"><div className="t">{roomTitle(r)}</div><div className="s tag">{r.tag}</div></div>
+                  <span className={"pill" + (sv && sv === rc.length ? " ok" : "")}>{sv}/{rc.length}</span>
+                </button>
+                <button type="button" className="li-del" aria-label={t("fl.deleteRoom", { name })} title={t("fl.deleteRoom", { name })}
+                  onClick={() => setConfirmDel(r.id)}><Icon name="trash" /></button>
+              </div>
             );
           })}
         </div>

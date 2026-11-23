@@ -78,16 +78,31 @@ export function saveElement(e: Element) {
   if (p) saveProject(p); else emit();
   void persist("e:" + e.id, e);
 }
+/** Deletes an element and its photos (photos belong to one element only; prefill copies no photos). */
 export function deleteElement(id: string) {
+  const e = data.elements[id];
   delete data.elements[id];
   emit();
   void remove("e:" + id);
+  if (e) deletePhotos(e.photoIds);
 }
+/** Deletes a room with its elements, their photos and the room photo. */
+export function deleteRoom(p: Project, roomId: string) {
+  const r = p.rooms.find(x => x.id === roomId);
+  if (!r) return;
+  for (const e of Object.values(data.elements)) if (e.pid === p.id && e.roomId === roomId) deleteElement(e.id);
+  deletePhotos([r.photoId]);
+  p.rooms = p.rooms.filter(x => x.id !== roomId);
+  saveProject(p);
+}
+/** Deletes a project with its elements and all its photos (project image, room photos, element photos). */
 export function deleteProject(id: string) {
+  const p = data.projects[id];
   for (const e of Object.values(data.elements)) if (e.pid === id) deleteElement(e.id);
   delete data.projects[id];
   emit();
   void remove("p:" + id);
+  if (p) deletePhotos([p.imageId, ...p.rooms.map(r => r.photoId)]);
 }
 
 export const elementsOf = (pid: string, roomId?: string) =>
@@ -137,6 +152,16 @@ export async function putPhoto(blob: Blob): Promise<string> {
   return id;
 }
 export const getPhoto = (id: string) => get<Blob>(id, photoDb);
+/** Removes photos from the device. Like all writes, only in the writing tab. */
+export function deletePhotos(ids: (string | undefined)[]) {
+  if (stale) return;
+  for (const id of ids) {
+    if (!id) continue;
+    const u = urlCache.get(id);
+    if (u) { URL.revokeObjectURL(u); urlCache.delete(id); }
+    void Promise.resolve().then(() => del(id, photoDb)).catch(err => console.warn(err));
+  }
+}
 export async function photoUrl(id: string): Promise<string | null> {
   if (urlCache.has(id)) return urlCache.get(id)!;
   const b = await getPhoto(id);

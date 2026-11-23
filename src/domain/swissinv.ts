@@ -182,7 +182,7 @@ export const BUILDING_SECTIONS: Section[] = [
       { key: "exName", label: "Name der Expertin, die das Audit durchgeführt hat", labelEn: "Auditor name", req: "muss", kind: "text",
         hint: "Wird für neue Projekte auf diesem Gerät gespeichert.", hintEn: "Remembered for new projects on this device." },
       { key: "exEmail", label: "Email der Expertin, die das Audit durchgeführt hat", labelEn: "Auditor email", req: "muss", kind: "email" },
-      { key: "exTelefon", label: "Telefon der Person, die die Bestandsaufnahme durchgeführt hat", labelEn: "Auditor phone", req: "muss", kind: "tel" },
+      { key: "exTelefon", label: "Telefon der Person, die die Bestandsaufnahme durchgeführt hat", labelEn: "Auditor phone", req: "muss", kind: "tel", placeholder: "+41 41 536 11 19" },
       { key: "architektin", label: "Architektin Quellobjekt", labelEn: "Original architect", req: "kann", kind: "text",
         info: "Ursprüngliche Architektin vom Baujahr: Vorname Name Firma, z.B.: Peter Muster Cirkla", infoEn: "Original architect at the time of construction: first name, last name, firm" },
       { key: "ingenieurin", label: "Ingenieurin Quellobjekt", labelEn: "Original engineer", req: "kann", kind: "text",

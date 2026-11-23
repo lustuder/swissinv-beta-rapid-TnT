@@ -126,7 +126,12 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
     ? t("same.countQty", { n: same.n, qty: L === "de" ? String(same.qty).replace(".", ",") : String(same.qty), unit: opt(same.unit ?? "") })
     : t("same.count", { n: same.n });
 
-  const F = (k: string, extra?: { hint?: React.ReactNode; readOnly?: boolean; options?: string[]; list?: string }) => (
+  // Dimensions: once the group is complete (height + width + depth, or length, or diameter, as in
+  // missingElementMuss), the dimension fields still empty are shown as Kann.
+  const has = (k: string) => (fields[k] ?? "").trim() !== "";
+  const dimsDone = (has("hoehe") && has("breite") && has("tiefe")) || has("laenge") || has("durchmesser");
+  const dimReq = (k: string) => (dimsDone && !has(k) ? "kann" as const : undefined);
+  const F = (k: string, extra?: { hint?: React.ReactNode; readOnly?: boolean; options?: string[]; list?: string; req?: "muss" | "kann" }) => (
     <FieldInput key={k} def={ELEMENT_FIELD[k]} value={fields[k] ?? ""} suggested={isSug(k)} onChange={v => change(k, v)} {...extra} />
   );
   const missingLabel = (k: string) => (k === "_dims" ? t("el.dims") : k === "_photos" ? t("el.photos3") : label(ELEMENT_FIELD[k]));
@@ -276,10 +281,10 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
             <h3 className="section-h">{t("el.dims")} <span className="small muted">{t("el.inCm")}</span></h3>
             <div className="dims">
               <DimensionSketch />
-              <div className="stack" style={{ gap: 10, flex: 1, minWidth: 0 }}>{F("hoehe")}{F("breite")}{F("tiefe")}</div>
+              <div className="stack" style={{ gap: 10, flex: 1, minWidth: 0 }}>{F("hoehe", { req: dimReq("hoehe") })}{F("breite", { req: dimReq("breite") })}{F("tiefe", { req: dimReq("tiefe") })}</div>
             </div>
             <p className="small muted">{t("el.dimsHint")}</p>
-            <div className="grid2">{F("laenge")}{F("durchmesser")}</div>
+            <div className="grid2">{F("laenge", { req: dimReq("laenge") })}{F("durchmesser", { req: dimReq("durchmesser") })}</div>
             {F("weitereDimension")}
           </section>
         )}
