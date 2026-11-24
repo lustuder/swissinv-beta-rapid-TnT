@@ -7,6 +7,7 @@ import { labelZpl } from "../lib/labelZpl";
 import { elementLabelPDF, labelBase, labelItemFor } from "../lib/labels";
 import { toast } from "../lib/toast";
 import { bluetoothAvailable, forgetPrinter, onPrinterChange, PrintError, printerName, printZpl, restorePrinter, type PrintErrorKind } from "../lib/zebra";
+import { forgetSerial, onSerialChange, printZplSerial, restoreSerial, serialAvailable, serialChosen } from "../lib/zebraSerial";
 import { Icon } from "./Icon";
 
 /**
@@ -17,6 +18,9 @@ import { Icon } from "./Icon";
  * the PDF way. Without Bluetooth, Print is the PDF way: on a PC the PDF prints from a hidden
  * frame; on a phone it opens in the PDF viewer, which has Print or Share. If that does not work,
  * the PDF downloads.
+ * On a PC (not Android) with Web Serial there is also "Print via Bluetooth port": the same ZPL label
+ * over the serial port Windows makes when the printer is paired (zebraSerial.ts). On Android this
+ * window is exactly as before.
  */
 export function LabelDialog({ e, p, onClose }: { e: Element; p: Project; onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -30,6 +34,10 @@ export function LabelDialog({ e, p, onClose }: { e: Element; p: Project; onClose
   const [busy, setBusy] = useState(false);
   const [btError, setBtError] = useState<PrintErrorKind | null>(null);
   const [printer, setPrinter] = useState(printerName);
+  const ser = serialAvailable(); // false on Android
+  const [serBusy, setSerBusy] = useState(false);
+  const [serError, setSerError] = useState<PrintErrorKind | null>(null);
+  const [serialSet, setSerialSet] = useState(serialChosen);
   const code = e.labelCode ?? "";
   const base = labelBase();
   const pc = window.matchMedia("(pointer: fine)").matches;
@@ -46,7 +54,7 @@ export function LabelDialog({ e, p, onClose }: { e: Element; p: Project; onClose
         setPdf({ blob, url });
         setSvg("data:image/svg+xml," + encodeURIComponent(s));
         // built now, so the tap on Print only connects and sends
-        if (bt) { const z = await labelZpl(labelItemFor(e, p, base)); if (live) setZpl(z); }
+        if (bt || ser) { const z = await labelZpl(labelItemFor(e, p, base)); if (live) setZpl(z); }
       } catch (err) { console.warn(err); if (live) setFailed(true); }
     })();
     return () => { live = false; if (url) URL.revokeObjectURL(url); };
@@ -57,6 +65,13 @@ export function LabelDialog({ e, p, onClose }: { e: Element; p: Project; onClose
     const update = () => setPrinter(printerName());
     void restorePrinter().then(update);
     return onPrinterChange(update);
+  }, []);
+
+  useEffect(() => {
+    if (!ser) return;
+    const update = () => setSerialSet(serialChosen());
+    void restoreSerial().then(update);
+    return onSerialChange(update);
   }, []);
 
   const save = () => { if (pdf) download(`${baseName(p)}_${code}_Etikette.pdf`, pdf.blob); };
@@ -80,6 +95,16 @@ export function LabelDialog({ e, p, onClose }: { e: Element; p: Project; onClose
       .finally(() => setBusy(false));
   };
   const btMessage = btError === "off" ? t("lbl.btOff") : btError === "notFound" ? t("lbl.btNotFound") : btError ? t("lbl.btFailed") : "";
+  // Zebra over the Bluetooth serial port (PC). printZplSerial must start inside the tap: the first time it opens the port list.
+  const printSerial = () => {
+    if (!zpl || busy || serBusy) return;
+    setSerBusy(true); setSerError(null);
+    printZplSerial(zpl)
+      .then(() => toast(t("lbl.printed")))
+      .catch(err => { const k = err instanceof PrintError ? err.kind : "failed"; if (k !== "cancelled") setSerError(k); console.warn(err); })
+      .finally(() => setSerBusy(false));
+  };
+  const serMessage = serError === "notFound" ? t("lbl.serNotFound") : serError ? t("lbl.btFailed") : "";
 
   return (
     <dialog ref={dialog} className="label-dialog" onClose={onClose} aria-labelledby="label-dialog-h">
@@ -111,6 +136,14 @@ export function LabelDialog({ e, p, onClose }: { e: Element; p: Project; onClose
           <button type="button" className="btn ghost grow" disabled={!pdf || (pc && !frameReady)} onClick={print}>{t("lbl.printPdf")}</button>
         </div>
       </>}
+      {ser && (
+        <div className="stack" style={{ gap: 8 }}>
+          {serMessage && <p className="small" role="alert" style={{ color: "var(--danger)", margin: 0 }}>{serMessage}</p>}
+          <button type="button" className="btn block" disabled={!zpl || busy || serBusy} onClick={printSerial}><Icon name="print" /> {serBusy ? t("lbl.printing") : t("lbl.printSerial")}</button>
+          <p className="small muted" style={{ margin: 0 }}>{serialSet ? t("lbl.serialSet") : t("lbl.serialHint")}</p>
+          {serialSet && <button type="button" className="btn ghost block" disabled={serBusy} onClick={() => { setSerError(null); void forgetSerial(); }}>{t("lbl.serialChange")}</button>}
+        </div>
+      )}
       <button type="button" className="btn ghost block" onClick={() => dialog.current?.close()}>{t("lbl.close")}</button>
       {pc && pdf && <iframe ref={frame} className="label-print-frame" src={pdf.url} title={t("lbl.print")} tabIndex={-1} aria-hidden="true" onLoad={() => setFrameReady(true)} />}
     </dialog>

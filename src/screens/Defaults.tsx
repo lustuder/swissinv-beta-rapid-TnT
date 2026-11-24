@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { DocUpload } from "../components/DocUpload";
 import { FieldInput } from "../components/FieldInput";
 import { Progress } from "../components/Progress";
 import { StepFooter } from "../components/StepFooter";
 import { TopBar } from "../components/TopBar";
-import { ELEMENT_FIELD, PROJECT_DEFAULT_KEYS } from "../domain/swissinv";
+import { DOKUMENTE_KEINE, ELEMENT_FIELD, PROJECT_DEFAULT_KEYS, joinMulti, splitMulti } from "../domain/swissinv";
 import { t, useLang } from "../i18n";
 import { back, home, navigate } from "../lib/nav";
 import { elementsOf, saveProject, useData } from "../lib/store";
@@ -35,6 +36,12 @@ export function Defaults({ pid }: { pid: string }) {
         {PROJECT_DEFAULT_KEYS.map(k => (
           <FieldInput key={k} def={{ ...ELEMENT_FIELD[k], hint: undefined, hintEn: undefined }} value={d[k] ?? ""} onChange={v => setD({ ...d, [k]: v })} />
         ))}
+        {/* documents for the whole building: stored once; their type is ticked in the list above */}
+        <DocUpload docs={p.docs ?? []} ticked={splitMulti(d.dokumente)} onChange={docs => { p.docs = docs; saveProject(p); }}
+          onKind={kind => setD(cur => {
+            const list = splitMulti(cur.dokumente).filter(k => k !== DOKUMENTE_KEINE);
+            return { ...cur, dokumente: joinMulti(list.includes(kind) ? list : [...list, kind]) };
+          })} />
         <h3 className="section-h">{t("inv.floors")}</h3>
         <p className="small muted">{t("inv.floorsText")} {p.gwr?.gastw ? t("inv.floorsReg", { n: p.gwr.gastw }) : ""}</p>
         <div className="grid2">

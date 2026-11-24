@@ -49,6 +49,29 @@ function shown(d: FieldDef, v: string | undefined): string {
 const savedElements = (p: Project) => elementsOf(p.id).filter(e => e.status === "saved");
 const photoName = (e: Element, i: number) => `${slug(e.fields.bauteilId || e.id)}_${i + 1}.jpg`;
 
+/**
+ * One file name per uploaded document, the same in the ZIP ("Dokumente/"), in "Zusatzfelder" and in
+ * the PDF report: "Gebaeude_<name>" for the building, "<Bauteil ID>_<name>" for an element. A file
+ * shared by prefilled elements appears once, under the first element that lists it.
+ */
+export function docNames(p: Project): Map<string, string> {
+  const out = new Map<string, string>(), used = new Set<string>();
+  const add = (id: string, prefix: string, name: string) => {
+    if (out.has(id)) return;
+    const m = /\.([A-Za-z0-9]{1,8})$/.exec(name), ext = m ? "." + m[1].toLowerCase() : "";
+    const stem = `${prefix}_${slug(m ? name.slice(0, -m[0].length) : name)}`;
+    let n = stem + ext;
+    for (let i = 2; used.has(n.toLowerCase()); i++) n = `${stem}_${i}${ext}`;
+    used.add(n.toLowerCase());
+    out.set(id, n);
+  };
+  for (const d of p.docs ?? []) add(d.id, "Gebaeude", d.name);
+  for (const e of savedElements(p)) for (const d of e.docs ?? []) add(d.id, slug(e.fields.bauteilId || e.id), d.name);
+  return out;
+}
+const docList = (docs: { id: string }[] | undefined, names: Map<string, string>, sep = "; ") =>
+  (docs ?? []).map(d => names.get(d.id) ?? "").filter(Boolean).join(sep);
+
 /* ---------------------------------------------------------------- tables */
 
 const STUFE1 = STUFE1_KEYS.map(k => ELEMENT_FIELD[k]).filter(d => !d.extra);
@@ -81,8 +104,10 @@ export function extrasTable(p: Project): (string | number)[][] {
   const out: (string | number)[][] = [["Gebäude – Zusatzfeld", "Wert"], ...extraB.map(d => [d.label, cell(d, p.building[d.key])])];
   if (p.gwr?.source === "osm") out.push(["OSM Objekt", p.gwr.featureId], ["OSM Name", p.gwr.name ?? ""], ["OSM Koordinaten (WGS84)", p.gwr.lat && p.gwr.lon ? `${p.gwr.lat}; ${p.gwr.lon}` : ""]);
   else if (p.gwr) out.push(["GWR Feature", p.gwr.featureId], ["GWR Gebäudebezeichnung", p.gwr.name ?? ""], ["GWR Koordinaten (LV95)", p.gwr.e && p.gwr.n ? `${p.gwr.e}; ${p.gwr.n}` : ""]);
+  const names = docNames(p);
+  if (p.docs?.length) out.push(["Hochgeladene Dokumente (Gebäude)", docList(p.docs, names)]);
   out.push([], ["Bauteil ID", "Bauteiltyp", "IFC PredefinedType", "Raum-Tag", "Raum", "Geschoss", "Zielprojekt bekannt", "Zielprojekt", "Erfassungsmodus", "Offene Muss-Felder", "Etiketten-Code",
-    "Gleiches Bauteil (Gruppe)", "Anzahl Einträge gleiches Bauteil", "Menge gleiches Bauteil gesamt", "Vorbefüllt von", "Erfassungsart"]);
+    "Gleiches Bauteil (Gruppe)", "Anzahl Einträge gleiches Bauteil", "Menge gleiches Bauteil gesamt", "Vorbefüllt von", "Erfassungsart", "Hochgeladene Dokumente"]);
   const byId = new Map(elementsOf(p.id).map(x => [x.id, x]));
   for (const e of savedElements(p)) {
     const r = p.rooms.find(x => x.id === e.roomId);
@@ -91,7 +116,7 @@ export function extrasTable(p: Project): (string | number)[][] {
     const group = sc && sc.n >= 2 ? [sameElements(e)[0]?.fields.bauteilId ?? "", sc.n, sc.qty !== undefined ? `${sc.qty} ${sc.unit}` : ""] : ["", "", ""];
     const from = e.timing.prefilledFrom ? byId.get(e.timing.prefilledFrom)?.fields.bauteilId ?? "" : "";
     const miss = missingElementMuss(e.fields, e.photoIds.length).map(k => (k === "_dims" ? "Abmessungen" : k === "_photos" ? "Fotos (mind. 3)" : ELEMENT_FIELD[k].label));
-    out.push([e.fields.bauteilId ?? "", RULE_BY_ID[e.fields.bauteiltyp ?? ""]?.de ?? e.fields.bauteiltyp ?? "", e.fields.ifcTyp ?? "", r?.tag ?? "", r?.name ?? "", floorLabel(r?.floor ?? 0), e.fields.zielprojektBekannt ?? "", e.fields.zielprojekt ?? "", e.timing.mode, miss.join(", "), e.labelCode ?? "", ...group, from, e.entry === "gtin" ? "GTIN" : "Formular"]);
+    out.push([e.fields.bauteilId ?? "", RULE_BY_ID[e.fields.bauteiltyp ?? ""]?.de ?? e.fields.bauteiltyp ?? "", e.fields.ifcTyp ?? "", r?.tag ?? "", r?.name ?? "", floorLabel(r?.floor ?? 0), e.fields.zielprojektBekannt ?? "", e.fields.zielprojekt ?? "", e.timing.mode, miss.join(", "), e.labelCode ?? "", ...group, from, e.entry === "gtin" ? "GTIN" : "Formular", docList(e.docs, names)]);
   }
   return out;
 }
@@ -139,7 +164,7 @@ async function workbook(p: Project): Promise<ArrayBuffer> {
   XLSX.utils.book_append_sheet(wb, sheet(buildingTable(p), [24, 52, 40, 10]), "Gebäude");
   const et = elementTable(p);
   XLSX.utils.book_append_sheet(wb, sheet(et, et[0].map(() => 20)), "Bauteile");
-  XLSX.utils.book_append_sheet(wb, sheet(extrasTable(p), [26, 26, 18, 18, 18, 10, 18, 22, 14, 40, 14, 22, 14, 16, 22, 12]), "Zusatzfelder");
+  XLSX.utils.book_append_sheet(wb, sheet(extrasTable(p), [26, 26, 18, 18, 18, 10, 18, 22, 14, 40, 14, 22, 14, 16, 22, 12, 40]), "Zusatzfelder");
   const sr = studyRows([p]);
   if (sr.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sr), "Zeitstudie");
   return XLSX.write(wb, { type: "array", bookType: "xlsx" });
@@ -160,6 +185,12 @@ export async function exportZIP(p: Project) {
     for (let i = 0; i < e.photoIds.length; i++) { const b = await getPhoto(e.photoIds[i]); if (b) dir.file(photoName(e, i), b); }
   }
   if (p.imageId) { const b = await getPhoto(p.imageId); if (b) dir.file("Gebaeude.jpg", b); }
+  // uploaded documents, named as in "Zusatzfelder"
+  const names = docNames(p);
+  if (names.size) {
+    const docs = zip.folder("Dokumente")!;
+    for (const [id, n] of names) { const b = await getPhoto(id); if (b) docs.file(n, b); }
+  }
   download(baseName(p) + ".zip", await zip.generateAsync({ type: "blob" }));
 }
 
@@ -256,6 +287,12 @@ export async function exportPDF(p: Project) {
   y = Math.max(lastY(), projectPic ? 30 + 60 : 0) + 7;
   sectionTitle(T("Kontakte", "Contacts"), y);
   kv([brow("agName"), brow("agEmail"), brow("agTelefon"), brow("exName"), brow("exEmail"), brow("exTelefon"), brow("architektin"), brow("ingenieurin")], y + 2, M, W - 2 * M);
+  const names = docNames(p);
+  if (p.docs?.length) {
+    y = lastY() + 6;
+    sectionTitle(T("Dokumente zum Gebäude", "Building documents"), y);
+    kv([[T("Hochgeladene Dokumente", "Uploaded documents"), docList(p.docs, names, ", ")]], y + 2, M, W - 2 * M);
+  }
 
   /* ---- overview ---- */
   const els = savedElements(p);
@@ -306,7 +343,7 @@ export async function exportPDF(p: Project) {
     y = block(T("Potenzial", "Potential"), [erow(e, "schadstoffbelastet"), erow(e, "schadstoffverdacht"), erow(e, "zustand"), erow(e, "zustandText"), erow(e, "verbindung"),
       erow(e, "potenzial"), erow(e, "potenzialBegruendung"), erow(e, "zielprojekt")], y);
     y = block(T("Anhänge und Status", "Attachments and status"), [erow(e, "dokumente"), erow(e, "dokumenteText"), [T("Fotos", "Photos"), e.photoIds.map((_, i) => photoName(e, i)).join(", ")],
-      erow(e, "verfuegbarStart"), erow(e, "verfuegbarEnde"), erow(e, "status")], y);
+      [T("Hochgeladene Dokumente", "Uploaded documents"), docList(e.docs, names, ", ")], erow(e, "verfuegbarStart"), erow(e, "verfuegbarEnde"), erow(e, "status")], y);
     const more = STUFE2_SECTIONS.flatMap(s => s.fields).filter(d => !["einbaujahr", "farbe", "gewicht", "verfuegbarStart", "verfuegbarEnde", "status"].includes(d.key));
     block(T("Bauteil Stufe 2", "Element level 2"), more.map(d => [label(d), shown(d, e.fields[d.key])] as [string, string]), y);
   }

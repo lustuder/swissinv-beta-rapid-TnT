@@ -15,15 +15,15 @@ The app runs fully in **German or English** (chosen after the start screen; Fren
 3. **Project menu** with three parts:
    - **Projektinformationen** – four pages: find the building (address search in the Swiss building register GWR, which fills EGRID, EGID, address, year built, volume, storeys and the SIA 102 building type; outside Switzerland, e.g. in Germany, a button searches OpenStreetMap instead, which fills the address and, where mapped, storeys, year built and building type), Allgemeine Gebäudedaten, Weitere Informationen, Kontakte. The auditor is remembered for the next project.
    - **Inventar** – starts with the values for all elements (Verfügbarkeit, Status, Dokumente) and the floors, then floors → rooms → elements. Rooms get a tag after `Floor_Use_Number`, e.g. `OG1_OFF_02`; "Next room" sits in the top corner.
-   - **Export** – Excel in the Swiss-Inv structure, ZIP with Excel + photos, CSV, PDF report, QR labels.
+   - **Export** – Excel in the Swiss-Inv structure, ZIP with Excel + photos + uploaded documents, CSV, PDF report, QR labels.
 4. **Room photo → bounding box** (assisted mode) – tap an element for an automatic box, or drag a box around it. The crop becomes the first photo. (Segmentation masks are reserved for BUISI.)
 5. **Element** – six pages: photos (front, side, fixing detail), identification (function in the building → element type, which generates the eBKP number and name and the IFC entity; the name stays free), quantity and dimensions (with a sketch), potential, description and attachments ("Keine" for no documents), Bauteil Stufe 2 – Erweiterte Angaben. Verortung is filled from the room and not asked.
 
 6. **Search** – the inventory screen (floors and rooms) has a search bar for all elements of the building; each room has one for its own elements. Case and accents do not matter ("tur" finds "Tür"), and every word must match: name, Bauteil ID, element type (German or English), eBKP, IFC, manufacturer, materials, colour, label code, room and floor. In the room, the rows keep their numbers, so they still match the boxes on the photo.
-7. **Prefill from an existing element** – on the first page of a new element (draft), "Prefill from an existing element" opens a searchable list of the building's elements. Everything is copied except Bauteil ID, Verortung and Koordinaten (they belong to the new location). Photos are not copied. Copied values are blue suggestions and never replace what was already typed. Works in both modes and is recorded for the time study.
+7. **Prefill from an existing element** – on the first page of a new element (draft), "Prefill from an existing element" opens a searchable list of the building's elements. Everything is copied except Bauteil ID, Verortung and Koordinaten (they belong to the new location). Photos are not copied; uploaded documents are (the file is shared, not duplicated). Copied values are blue suggestions and never replace what was already typed. Works in both modes and is recorded for the time study.
 8. **Same element in the building** – a prefilled element is linked to its source. The element pages show "Same element: 3 entries in the building · 6 Stk" (entries, and the total Menge when all entries use the same Einheit); lists show "3× in building". "Not the same element" removes the link and keeps the values. In the room list and in the building search, linked elements appear as **one bar** with their number in the building; the small arrow opens it and lists every entry in the building with its room and floor. Entries in the current room keep their photo number, QR button and delete button.
 9. **Delete** – element rows (right of the QR button), room rows (inventory screen) and projects (main menu) have a trash button. It asks first (Delete / Keep), then deletes with all timing data and photos on this device. A room takes its elements with it, a project its rooms and elements. Export first if the data is still needed.
-10. **Add element with existing ID** – next to "Add element manually". A single page with only two fields: the **GTIN**, which becomes the Bauteil ID, and a **comment**, exported as "Weitere Informationen", where web addresses become clickable links. The app warns when the GTIN's check digit does not fit (8, 12, 13 or 14 digits) but still saves. Verortung is filled from the room; all other fields stay empty, and building defaults are not applied. Elements with the same GTIN in the building are linked as the same element when saved, so the counter shows them.
+10. **Add element with existing ID** – next to "Add element manually". A single page with the **GTIN**, which becomes the Bauteil ID, the **name** (Bezeichnung), a **comment**, exported as "Weitere Informationen", where web addresses become clickable links, and **uploaded documents**. Lists show the name, or "GTIN …" when there is none. The app warns when the GTIN's check digit does not fit (8, 12, 13 or 14 digits) but still saves. Verortung is filled from the room; all other fields stay empty, and building defaults are not applied. Elements with the same GTIN in the building are linked as the same element when saved, so the counter shows them.
 
 Blue fields are **suggestions** (from the register, the element type, the building-wide values or a prefilled element). They stay blue until the person checks or changes them, and the app never overwrites what the person typed.
 
@@ -53,7 +53,8 @@ Every push to `main` builds the app and publishes it (`.github/workflows/deploy.
 ## Swiss-Inv conformity
 
 - All field names, order, value lists, Muss/Kann and explanations come from `src/domain/swissinv.ts`, transcribed from the template.
-- The Excel export has the sheets **Gebäude** and **Bauteile** in template order and naming. Fields the app adds beyond Swiss-Inv (marked "Zusatz" in the app) go to a separate sheet **Zusatzfelder**: Hauptmaterial, destination project, mode, GWR reference, QR label code ("Etiketten-Code"), and for linked elements "Gleiches Bauteil (Gruppe)" (Bauteil ID of the group's first entry), "Anzahl Einträge gleiches Bauteil", "Menge gleiches Bauteil gesamt" "Vorbefüllt von" (Bauteil ID of the source) and "Erfassungsart" (`GTIN` for an element added with an existing ID, else `Formular`).
+- The Excel export has the sheets **Gebäude** and **Bauteile** in template order and naming. Fields the app adds beyond Swiss-Inv (marked "Zusatz" in the app) go to a separate sheet **Zusatzfelder**: Hauptmaterial, destination project, mode, GWR reference, QR label code ("Etiketten-Code"), and for linked elements "Gleiches Bauteil (Gruppe)" (Bauteil ID of the group's first entry), "Anzahl Einträge gleiches Bauteil", "Menge gleiches Bauteil gesamt" "Vorbefüllt von" (Bauteil ID of the source) and "Erfassungsart" (`GTIN` for an element added with an existing ID, else `Formular`), plus "Hochgeladene Dokumente" (file names as in the ZIP; one row for the building, one column for the elements).
+- **Uploaded documents:** next to "Liste der vorhandenen Dokumente" – on the element page "Beschreibung und Anhänge" and under "Defaults for all elements" (documents for the whole building) – any file can be uploaded (PDF, images, plans, data sheets, models). Each file has a document type from the Swiss-Inv list; uploading ticks that type and removes "Keine". The files stay on the device (like photos) and go into the ZIP export as `Dokumente/Gebaeude_<name>` and `Dokumente/<Bauteil ID>_<name>`; the PDF report lists them. A file shared by prefilled elements is stored once and deleted only when no element or project lists it any more. Elements added with an existing ID (GTIN) have the upload on their single page.
 - **Dimensions:** the template lists height, width, depth, length and diameter as Muss. The app counts the group as complete with height + width + depth, or length, or diameter. Once the group is complete, the dimension fields still empty show "Kann" (e.g. length and diameter after height, width and depth).
 - **Photos:** at least 3 per element, compressed to under 1.5 MB, named `<Bauteil ID>_<n>.jpg` in the ZIP and in "Liste der vorhandenen Fotos".
 - **Bauwerksart** allows several values for mixed-use buildings, joined with "; ".
@@ -80,6 +81,14 @@ Every push to `main` builds the app and publishes it (`.github/workflows/deploy.
 4. The first print of a session also switches the printer to ZPL (`device.languages = zpl`), in case it was set to "line print".
 5. **One-time printer setup** in the Zebra Printer Setup Utility app: Bluetooth Low Energy on, media type to match the roll (linerless: continuous, or mark if the roll has black marks), then calibrate the media once.
 6. iPhone browsers have no Bluetooth for websites. There, use **Print** (PDF) or **Download PDF**.
+
+**Printing from a PC (Windows) via the Bluetooth port.** The ZQ511 accepts print data over Bluetooth LE only on a paired, encrypted link. Android pairs by itself, so **Print** works there. Windows does not: Chrome connects, but the printer drops the data, and the window says "Printer not reachable". On a PC (not on Android) the label window therefore also has **Print via Bluetooth port (PC)**, which sends the same ZPL label over classic Bluetooth (Web Serial, `src/lib/zebraSerial.ts`):
+
+1. Once: pair the printer in Windows (Settings → Bluetooth & devices → Add device → Bluetooth, confirm the code). Windows makes a port, e.g. "Standard Serial over Bluetooth link (COM6)".
+2. The first **Print via Bluetooth port** shows Chrome's port list. Choose the printer's port (Windows lists it as the outgoing port of the printer under More Bluetooth settings → COM Ports). Chrome remembers it; **Choose another port** forgets it.
+3. Each job opens the port, sends and closes it, so the printer is free for a phone in between. A phone connected to the printer at the same time blocks the port.
+
+On Android nothing changes: the button is not shown there, and **Print** works over Bluetooth LE as before.
 
 **Scan a label.** The phone camera opens the link, and the app opens the element page (photos step). If no element on this device has the code, or more than one element has it, the app shows the label screen. **Main menu → Open a label** takes a typed code or a pasted link.
 
@@ -126,12 +135,14 @@ src/
     labelSheet.ts    PDF layout: A4 sheet with 3 × 8 labels, or one 70 × 37 mm label
     labelZpl.ts      one label as a ZPL job for a 203 dpi Zebra printer (picture + compression)
     zebra.ts         Zebra printer over Web Bluetooth: choose once, reconnect, send
+    zebraSerial.ts   Zebra printer over a Bluetooth serial port (Web Serial, PCs only; Android uses zebra.ts)
     labels.ts        label codes and the store: link address, assign codes, open a scanned link
     images.ts        photo decoding (incl. iPhone HEIC), compression, cropping
     nav.ts           screen navigation
   screens/           one file per screen (Label.tsx: open a label by code or link)
   components/        shared UI pieces (LabelDialog.tsx: the QR label of one element;
-                     ElementSearch.tsx: search bar and result list; ElementPicker.tsx: choose an element to prefill from)
+                     ElementSearch.tsx: search bar and result list; ElementPicker.tsx: choose an element to prefill from;
+                     DocUpload.tsx: upload, open and remove documents)
 ```
 
 ## Roadmap for SwissInv-Beta

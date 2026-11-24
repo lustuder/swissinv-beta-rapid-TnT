@@ -29,6 +29,17 @@ export interface GwrInfo {
   fetchedAt: number;
 }
 
+/** An uploaded document (app addition, not Swiss-Inv). The file is a blob in the device store. */
+export interface DocFile {
+  id: string;
+  name: string;
+  mime: string;
+  size: number;
+  /** Document type, a value of DOKUMENTE (without "Keine"), e.g. "Pläne". */
+  kind: string;
+  addedAt: number;
+}
+
 export interface Room {
   id: string;
   floor: number; // 0 = EG, 1 = 1.OG, -1 = 1.UG
@@ -57,6 +68,8 @@ export interface Project {
   gwr?: GwrInfo;
   info: FloorSetup;
   rooms: Room[];
+  /** Documents for the whole building, uploaded under "Defaults for all elements". */
+  docs?: DocFile[];
   lastFloor?: number;
   createdAt: number;
   updatedAt: number;
@@ -108,8 +121,10 @@ export interface Element {
   labelCode?: string;
   /** Elements with the same groupId are the same building element (linked by prefill). App field, not Swiss-Inv. */
   groupId?: string;
-  /** "gtin": added with an existing ID (GTIN in Bauteil ID, comment in Weitere Informationen); shows only those two. Missing = the normal form. */
+  /** "gtin": added with an existing ID; one page with GTIN (Bauteil ID), Bezeichnung, comment (Weitere Informationen) and documents. Missing = the normal form. */
   entry?: "gtin";
+  /** Uploaded documents. A prefilled element shares the source's files (same ids). */
+  docs?: DocFile[];
 }
 
 export type Route =

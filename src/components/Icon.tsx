@@ -14,6 +14,7 @@ const PATHS: Record<string, string> = {
   print: "M7 9V4h10v5 M7 17H5a1 1 0 0 1-1-1v-5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5a1 1 0 0 1-1 1h-2 M7 14h10v6H7z",
   download: "M12 4v11M7 10l5 5 5-5M5 20h14",
   trash: "M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13 M10 11v5 M14 11v5",
+  file: "M7 3h7l5 5v13H7z M14 3v5h5 M10 13h6 M10 17h6",
   qr:"M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h2v2h-2z M18 14h2 M14 18v2h2 M18 18h2v2 M6.5 6.5h1v1h-1z M16.5 6.5h1v1h-1z M6.5 16.5h1v1h-1z",
 };
 export function Icon({ name, size }: { name: keyof typeof PATHS | string; size?: number }) {

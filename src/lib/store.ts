@@ -78,13 +78,13 @@ export function saveElement(e: Element) {
   if (p) saveProject(p); else emit();
   void persist("e:" + e.id, e);
 }
-/** Deletes an element and its photos (photos belong to one element only; prefill copies no photos). */
+/** Deletes an element, its photos (they belong to one element only) and documents no one else uses. */
 export function deleteElement(id: string) {
   const e = data.elements[id];
   delete data.elements[id];
   emit();
   void remove("e:" + id);
-  if (e) deletePhotos(e.photoIds);
+  if (e) { deletePhotos(e.photoIds); releaseFiles((e.docs ?? []).map(d => d.id)); }
 }
 /** Deletes a room with its elements, their photos and the room photo. */
 export function deleteRoom(p: Project, roomId: string) {
@@ -102,7 +102,7 @@ export function deleteProject(id: string) {
   delete data.projects[id];
   emit();
   void remove("p:" + id);
-  if (p) deletePhotos([p.imageId, ...p.rooms.map(r => r.photoId)]);
+  if (p) { deletePhotos([p.imageId, ...p.rooms.map(r => r.photoId)]); releaseFiles((p.docs ?? []).map(d => d.id)); }
 }
 
 export const elementsOf = (pid: string, roomId?: string) =>
@@ -152,6 +152,19 @@ export async function putPhoto(blob: Blob): Promise<string> {
   return id;
 }
 export const getPhoto = (id: string) => get<Blob>(id, photoDb);
+
+/* ---------- documents: stored like photos, but may be shared (prefill links the same files) ---------- */
+export const putFile = putPhoto;
+export const getFile = getPhoto;
+/** True while a project or element still lists the document. */
+export function fileInUse(id: string): boolean {
+  return Object.values(data.projects).some(p => p.docs?.some(d => d.id === id))
+    || Object.values(data.elements).some(e => e.docs?.some(d => d.id === id));
+}
+/** Deletes the documents no project or element lists any more. Call after removing them from their owner. */
+export function releaseFiles(ids: string[]) {
+  deletePhotos(ids.filter(id => !fileInUse(id)));
+}
 /** Removes photos from the device. Like all writes, only in the writing tab. */
 export function deletePhotos(ids: (string | undefined)[]) {
   if (stale) return;

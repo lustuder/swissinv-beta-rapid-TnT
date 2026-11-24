@@ -170,9 +170,9 @@ export function linkByGtin(e: Element) {
   saveElement(e);
 }
 
-/** Name for lists: "GTIN 7612345678901" for an element added with an existing ID, else Bezeichnung or type. */
+/** Name for lists: Bezeichnung; for an element added with an existing ID without a name "GTIN 7612345678901"; else the type. */
 export function displayName(e: Element): string {
-  if (e.entry === "gtin") return e.fields.bauteilId ? `GTIN ${e.fields.bauteilId}` : t("gt.title");
+  if (e.entry === "gtin") return e.fields.bezeichnung || (e.fields.bauteilId ? `GTIN ${e.fields.bauteilId}` : t("gt.title"));
   return e.fields.bezeichnung || e.fields.bauteiltyp || t("rm.unnamed");
 }
 

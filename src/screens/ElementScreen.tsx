@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { DimensionSketch } from "../components/DimensionSketch";
+import { DocUpload } from "../components/DocUpload";
 import { ElementPicker } from "../components/ElementPicker";
 import { FieldInput } from "../components/FieldInput";
 import { Icon } from "../components/Icon";
@@ -8,7 +9,7 @@ import { StepFooter } from "../components/StepFooter";
 import { TopBar } from "../components/TopBar";
 import { floorLabel } from "../domain/fields";
 import { RULE_BY_ID, RULE_TYPES, searchTypes, type RuleType, EBKP_CODES, ebkpName } from "../domain/crb";
-import { EBKP_MAIN, ELEMENT_FIELD, PHOTO_SLOTS, STUFE2_SECTIONS, missingElementMuss } from "../domain/swissinv";
+import { DOKUMENTE_KEINE, EBKP_MAIN, ELEMENT_FIELD, PHOTO_SLOTS, STUFE2_SECTIONS, joinMulti, missingElementMuss, splitMulti } from "../domain/swissinv";
 import type { Element } from "../domain/types";
 import { label, opt, t, useLang, type UIKey } from "../i18n";
 import { applySuggestions, gtinCheck, linkByGtin, linkPrefill, linksIn, prefillValues, sameCount, sameGtin, suggestionsAfterChange, unlinkElement } from "../lib/elements";
@@ -77,6 +78,12 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
     setFields(next);
     e.fields = next; saveElement(e);
   };
+  /** An uploaded document's type is ticked in "Liste der vorhandenen Dokumente"; "Keine" no longer fits. */
+  const tickDoc = (kind: string) => {
+    const all = splitMulti(fields.dokumente), list = all.filter(k => k !== DOKUMENTE_KEINE);
+    if (!list.includes(kind)) change("dokumente", joinMulti([...list, kind]));
+    else if (list.length !== all.length) change("dokumente", joinMulti(list));
+  };
   const go = (s: number) => { e.fields = { ...fields }; saveElement(e); navigate({ name: "element", pid, elementId, step: s }, true); };
   const toRoom = () => { e.fields = { ...fields }; saveElement(e); navigate({ name: "room", pid, roomId: e.roomId }); };
 
@@ -118,6 +125,8 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
     setGroup((next.ebkp ?? "").charAt(0));
     setOtherType(!!next.ebkp && !next.bauteiltyp);
     e.fields = next;
+    // documents of the same element come along; the files are shared, not copied (photos do not come along)
+    if (src.docs?.length) { const have = new Set((e.docs ?? []).map(d => d.id)); e.docs = [...(e.docs ?? []), ...src.docs.filter(d => !have.has(d.id))]; }
     linkPrefill(e, src); // saves e and records the prefill for the time study
     toast(t("pf.done", { id: src.fields.bauteilId || src.fields.bezeichnung || t("rm.unnamed"), n: changed.length }));
   };
@@ -149,14 +158,15 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
       <button className="btn sm danger" onClick={remove}>{t("c.delete")}</button><button className="btn sm ghost" onClick={() => setConfirmDelete(false)}>{t("c.keep")}</button></div>
   ) : <button className="btn ghost danger block" onClick={() => setConfirmDelete(true)}>{t("el.delete")}</button>;
 
-  // Added with an existing ID: one page with only the GTIN (Bauteil ID) and a comment (Weitere Informationen).
+  // Added with an existing ID: one page with the GTIN (Bauteil ID), the name (Bezeichnung), a comment
+  // (Weitere Informationen) and uploaded documents.
   if (e.entry === "gtin") {
     const gt = gtinCheck(fields.bauteilId ?? "");
     const dupes = sameGtin(e, gt.digits).length;
     const links = linksIn(fields.weitereInfo2 ?? "");
     return (
       <>
-        <TopBar title={gt.digits ? `GTIN ${gt.digits}` : t("gt.title")} onBack={toRoom} onHome={() => { e.fields = { ...fields }; saveElement(e); home(pid); }}>
+        <TopBar title={fields.bezeichnung || (gt.digits ? `GTIN ${gt.digits}` : t("gt.title"))} onBack={toRoom} onHome={() => { e.fields = { ...fields }; saveElement(e); home(pid); }}>
           <span className="timer" aria-label={t("el.clock")}>{clock}</span>
         </TopBar>
         <main className="wrap">
@@ -174,6 +184,7 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
               {gt.digits && !gt.valid && <span className="small" role="status" style={{ color: "var(--warn)" }}>{t("gt.checkBad")}</span>}
               {dupes > 0 && same.n < 2 && <span className="small" role="status" style={{ color: "var(--primary)" }}>{t("gt.same", { n: dupes })}</span>}
             </div>
+            {F("bezeichnung")}
             <div className="field">
               <label htmlFor="gtin-comment">{t("gt.comment")}</label>
               <textarea id="gtin-comment" rows={5} value={fields.weitereInfo2 ?? ""} onChange={ev => change("weitereInfo2", ev.target.value)} />
@@ -183,6 +194,7 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
               <div className="gtin-links"><span className="eyebrow">{t("gt.links")}</span>
                 {links.map(u => <a key={u} href={u} target="_blank" rel="noopener noreferrer">{u}</a>)}</div>
             )}
+            <DocUpload docs={e.docs ?? []} ticked={splitMulti(fields.dokumente)} onChange={docs => { e.docs = docs; saveElement(e); }} onKind={tickDoc} />
           </section>
           {!gt.digits && <p className="small muted">{t("gt.noId")}</p>}
           <button type="button" className="btn primary block" disabled={!gt.digits} onClick={save}><Icon name="check" /> {t("el.save")}</button>
@@ -305,6 +317,8 @@ export function ElementScreen({ pid, elementId, step }: { pid: string; elementId
             {F("herstellerin")}{F("materialien")}
             <h3 className="section-h">{L === "en" ? "Attachments" : "Anhänge"}</h3>
             {F("dokumente")}{F("dokumenteText")}
+            <DocUpload docs={e.docs ?? []} ticked={splitMulti(fields.dokumente)} onChange={docs => { e.docs = docs; saveElement(e); }} onKind={tickDoc} />
+            {(p.docs?.length ?? 0) > 0 && <p className="small muted" style={{ margin: 0, overflowWrap: "anywhere" }}>{t("doc.building", { names: p.docs!.map(d => d.name).join(", ") })}</p>}
           </section>
         )}
 

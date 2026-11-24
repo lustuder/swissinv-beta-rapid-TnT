@@ -329,3 +329,12 @@ details.multi.suggested{background:color-mix(in oklab,var(--c4) 13%,var(--surfac
 .li-row.child.row-confirm{padding-left:44px}
 .li.child .t{font-weight:500;font-size:14px}
 @media (prefers-reduced-motion:reduce){.chev{transition:none}}
+/* uploaded documents */
+.doc-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:6px 0 6px 12px;border-top:1px solid var(--line)}
+.doc-row:first-child{border-top:0}
+.doc-open{flex:1 1 180px;min-width:0;min-height:44px;display:flex;gap:10px;align-items:center;border:0;background:none;color:inherit;text-align:left;cursor:pointer;padding:0}
+.doc-open svg{flex:none;color:var(--primary)}
+.doc-open .t{display:block;font-weight:700;overflow-wrap:anywhere}
+.doc-open .s{display:block;font-size:13px;color:var(--muted)}
+.doc-row select{width:auto;flex:1 1 140px;min-height:44px}
+.doc-row .li-del{border-left:0;width:48px}

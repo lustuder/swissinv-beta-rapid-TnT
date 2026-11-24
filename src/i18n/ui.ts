@@ -241,6 +241,11 @@ export const UI = {
   "lbl.btHint": d("Drucken geht per Bluetooth an einen Zebra-Drucker. Beim ersten Mal den Drucker in der Liste wählen.", "Print goes to a Zebra printer over Bluetooth. The first time, choose the printer in the list."),
   "lbl.changePrinter": d("Anderer Drucker", "Change printer"),
   "lbl.printPdf": d("Als PDF drucken", "Print as PDF"),
+  "lbl.printSerial": d("Über Bluetooth-Port drucken (PC)", "Print via Bluetooth port (PC)"),
+  "lbl.serialHint": d("Für PCs, auf denen «Drucken» nicht klappt: den Drucker einmal in Windows unter Bluetooth koppeln. Beim ersten Mal den Port wählen, den Windows für den Drucker angelegt hat (z.B. «Standard Serial over Bluetooth link (COM6)»).", "For PCs where Print does not work: pair the printer once in Windows under Bluetooth. The first time, choose the port Windows made for the printer (e.g. “Standard Serial over Bluetooth link (COM6)”)."),
+  "lbl.serialSet": d("Bluetooth-Port gewählt. Ein Tippen druckt.", "Bluetooth port chosen. One tap prints."),
+  "lbl.serialChange": d("Anderen Port wählen", "Choose another port"),
+  "lbl.serNotFound": d("Port nicht erreichbar. Ist der Drucker eingeschaltet und in Windows gekoppelt, und ist kein Handy mit ihm verbunden? Sonst «Anderen Port wählen» und den Port des Druckers nehmen.", "Port not reachable. Is the printer switched on and paired in Windows, with no phone connected to it? Otherwise use “Choose another port” and pick the printer’s port."),
   "lbl.btOff": d("Bluetooth ist aus. Bluetooth einschalten und erneut drucken.", "Bluetooth is off. Turn on Bluetooth and print again."),
   "lbl.btNotFound": d("Drucker nicht erreichbar. Ist er eingeschaltet und in der Nähe? Dann erneut drucken.", "Printer not reachable. Is it switched on and nearby? Then print again."),
   "lbl.btFailed": d("Drucken hat nicht geklappt. Erneut versuchen oder «PDF herunterladen» nutzen.", "Printing did not work. Try again, or use Download PDF."),
@@ -314,6 +319,20 @@ export const UI = {
   "gt.commentHint": d("Notizen und Links, z.B. zum Datenblatt. Wird als «Weitere Informationen» exportiert.", "Notes and links, e.g. to the data sheet. Exported as “Weitere Informationen”."),
   "gt.links": d("Links", "Links"),
   "gt.noId": d("Zum Speichern eine GTIN eingeben.", "Enter a GTIN to save."),
+
+  // uploaded documents
+  "doc.upload": d("Dokumente hochladen", "Upload documents"),
+  "doc.hint": d("PDF, Bilder, Pläne, Datenblätter, Modelle – jede Datei. Sie bleibt auf diesem Gerät und kommt in den ZIP-Export (Ordner «Dokumente»).", "PDF, images, plans, data sheets, models – any file. It stays on this device and goes into the ZIP export (folder “Dokumente”)."),
+  "doc.saving": d("Dokument wird gespeichert…", "Saving document…"),
+  "doc.big": d("Grosse Datei ({size}). Sie braucht Speicher auf diesem Gerät.", "Large file ({size}). It needs storage on this device."),
+  "doc.failed": d("Die Datei konnte nicht gespeichert werden. Ist der Speicher des Geräts voll?", "The file could not be saved. Is the device storage full?"),
+  "doc.kind": d("Dokumentart", "Document type"),
+  "doc.open": d("Öffnen", "Open"),
+  "doc.openFor": d("{name} öffnen", "Open {name}"),
+  "doc.remove": d("{name} entfernen", "Remove {name}"),
+  "doc.removeQ": d("«{name}» entfernen?", "Remove “{name}”?"),
+  "doc.missing": d("Die Datei ist auf diesem Gerät nicht mehr vorhanden.", "The file is no longer on this device."),
+  "doc.building": d("Dokumente zum ganzen Gebäude (aus den Vorgaben): {names}", "Documents for the whole building (from the defaults): {names}"),
 
   // errors
   "err.photoFormat": d("Dieses Fotoformat kann nicht geöffnet werden. Bitte JPEG oder PNG verwenden.", "This photo format can't be opened. Please use a JPEG or PNG photo."),

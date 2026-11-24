@@ -171,7 +171,7 @@ export function RoomScreen({ pid, roomId }: { pid: string; roomId: string }) {
       <button className="li" onClick={() => navigate({ name: "element", pid, elementId: e.id, step: 0 })}>
         <span className="swatch num" style={{ background: e.color }}>{num.get(e.id)}</span>
         <div className="grow"><div className="t">{child ? e.fields.bauteilId || displayName(e) : displayName(e)}</div>
-          <div className="s">{child ? t("grp.here") : (e.entry === "gtin" ? (e.fields.weitereInfo2 ?? "").split("\n")[0]
+          <div className="s">{child ? t("grp.here") : (e.entry === "gtin" ? [e.fields.bezeichnung && e.fields.bauteilId ? `GTIN ${e.fields.bauteilId}` : "", (e.fields.weitereInfo2 ?? "").split("\n")[0]].filter(Boolean).join(" · ")
             : [e.fields.bauteilId, e.fields.ebkp, e.fields.menge ? `${e.fields.menge} ${e.fields.einheit ?? ""}` : ""].filter(Boolean).join(" · ")) || (e.status === "saved" ? "" : t("rm.notDone"))}</div></div>
         {tick(e)}
       </button>
