@@ -36,8 +36,8 @@ function cell(d: FieldDef, v: string | undefined): string | number {
   if (d.kind === "number" || d.kind === "year") { const n = Number(s.replace(",", ".")); return isNaN(n) ? s : n; }
   return s;
 }
-/** Value for the PDF report, in the UI language. */
-function shown(d: FieldDef, v: string | undefined): string {
+/** Value for the PDF report and the read-only scan view, in the UI language. */
+export function shown(d: FieldDef, v: string | undefined): string {
   const s = (v ?? "").trim();
   if (!s) return "";
   if (d.kind === "date") return toDate(s);

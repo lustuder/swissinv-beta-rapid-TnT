@@ -1,0 +1,18 @@
+{
+  "name": "swissinv-sync-worker",
+  "private": true,
+  "type": "module",
+  "description": "SwissInv-Beta online sync: Cloudflare Worker + D1 (free plan, no payment method)",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "migrate:local": "wrangler d1 migrations apply swissinv-sync --local",
+    "migrate:remote": "wrangler d1 migrations apply swissinv-sync --remote"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261123.1",
+    "typescript": "~5.5.4",
+    "wrangler": "^4.168.0"
+  }
+}

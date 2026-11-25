@@ -16,7 +16,9 @@ SwissInv-Beta is a phone-first web app (Vite + React + TypeScript) for reuse inv
 - `src/lib/gwr.ts` – Swiss building register via geo.admin.ch (public, no key). Register values are suggestions, never final.
 - `src/lib/osm.ts` – fallback outside Switzerland via OpenStreetMap Nominatim. Usage policy: no search-as-you-type, at most 1 request/s, show "© OpenStreetMap contributors". Stored values stay German (`accept-language=de`).
 - `src/lib/elements.ts` – element creation and auto-fill rules.
-- `src/lib/store.ts` – the only place that touches storage (IndexedDB via idb-keyval). Objects are mutated, then saved with `saveProject` / `saveElement`. Components read with `useData()`.
+- `src/lib/store.ts` – the only place that touches storage. IndexedDB (idb-keyval) is the main store; after each local write, its persistence functions (`persist`, `remove`) also queue the change for the optional online sync. Objects are mutated, then saved with `saveProject` / `saveElement`. Components read with `useData()`.
+- `src/lib/sync.ts` – optional online sync to the Cloudflare Worker in `worker/` (off without `VITE_SYNC_URL`): persistent outbox, debounced upload, team key, read-only lookup by label code. Only `store.ts` queues changes; it does not import `store.ts`.
+- `worker/` – the sync API (Cloudflare Worker + D1, free plan without a payment method, EU jurisdiction; no R2). Own `package.json`; the app's dependencies stay unchanged. `npm run dev` there runs it locally.
 - `src/lib/nav.ts` – routing. Routes are typed in `types.ts` (`Route`).
 - `src/lib/segmentation/` – `regionGrow.ts` (an image algorithm, not a model) gives the automatic bounding box on a tap. SwissInv-Beta shows boxes only; masks belong to BUISI.
 - `src/lib/timing.ts` – the time-study clock.
@@ -31,7 +33,8 @@ SwissInv-Beta is a phone-first web app (Vite + React + TypeScript) for reuse inv
 6. **Terminology.** Say *element* (Bauteil) or *product* (Bauprodukt), never "component", in UI copy and docs. "Component" is only used for React components in code.
 7. **No vision models or AI calls** in this repo – that belongs to BUISI.
 8. **Both languages, always.** The UI is fully German or fully English. Stored values and Excel/CSV column names stay in the official German of the template; only the display is translated.
-9. **Offline first.** Everything except the address search must work without a network connection.
+9. **Offline first.** Everything except the address search and the online sync must work without a network connection. Every save goes to IndexedDB first; the sync only uploads afterwards.
+10. **Sync rules.** Never lose a queued change (an outbox entry leaves only after the Worker confirmed it). Uploads must be safe to repeat (upsert by id, newest `updatedAt` wins); deletes are tombstones. Only the writing tab syncs. Photos and documents are not synced (no R2, so no payment method and no costs); the public read (by label code) returns a whitelist – element fields, room, project name and address, photo count and document names; never contacts, timing, files or lists. Writes need the team key, which is a Worker secret and is never committed. Do not change timing data on the way.
 
 ## Style
 - Mobile first: test at 400 px width. Touch targets at least 44 px.

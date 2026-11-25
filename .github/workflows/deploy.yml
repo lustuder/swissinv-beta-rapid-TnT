@@ -29,6 +29,10 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
+          # Repository variables (Settings → Secrets and variables → Actions → Variables).
+          # Empty = online sync off / labels use the address the app runs on.
+          VITE_SYNC_URL: ${{ vars.VITE_SYNC_URL }}
+          VITE_QR_BASE_URL: ${{ vars.VITE_QR_BASE_URL }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -338,3 +338,16 @@ details.multi.suggested{background:color-mix(in oklab,var(--c4) 13%,var(--surfac
 .doc-open .s{display:block;font-size:13px;color:var(--muted)}
 .doc-row select{width:auto;flex:1 1 140px;min-height:44px}
 .doc-row .li-del{border-left:0;width:48px}
+/* online sync */
+.sync-dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--muted)}
+.sync-dot.ok{background:var(--ok)}
+.sync-dot.warn{background:var(--warn)}
+.sync-dot.wait{background:var(--primary)}
+.sync-card .row input{min-width:0}
+/* read-only copy of a scanned element */
+.remote-note{border-color:var(--primary)}
+.remote-fields{margin:0;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
+.remote-fields>div{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:8px;padding:8px 12px;border-top:1px solid var(--line)}
+.remote-fields>div:first-child{border-top:0}
+.remote-fields dt{font-size:13px;color:var(--muted)}
+.remote-fields dd{margin:0;overflow-wrap:anywhere}

@@ -1,5 +1,6 @@
 import { Icon } from "../components/Icon";
 import { ModeChip } from "../components/ModeChip";
+import { SyncStatus } from "../components/SyncStatus";
 import { TopBar } from "../components/TopBar";
 import { BUILDING_FIELDS, missingBuildingMuss } from "../domain/swissinv";
 import { t, useLang } from "../i18n";
@@ -54,6 +55,7 @@ export function Hub({ pid }: { pid: string }) {
           </button>
         </div>
         <button className="btn ghost" onClick={() => navigate({ name: "project", pid })}>{t("hub.editProject")}</button>
+        <SyncStatus />
       </main>
     </>
   );

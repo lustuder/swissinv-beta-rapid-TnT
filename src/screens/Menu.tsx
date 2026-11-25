@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BuildingIllustration } from "../components/BuildingIllustration";
 import { Icon } from "../components/Icon";
+import { SyncStatus } from "../components/SyncStatus";
 import { TopBar } from "../components/TopBar";
 import { t, useLang } from "../i18n";
 import { navigate } from "../lib/nav";
@@ -55,6 +56,7 @@ export function Menu() {
         </div>
         <button className="btn ghost" onClick={() => navigate({ name: "label" })}><Icon name="qr" /> {t("menu.openLabel")}</button>
         <button className="btn ghost" onClick={() => navigate({ name: "study" })}><Icon name="chart" /> {t("menu.study")}</button>
+        <SyncStatus withKey />
         <p className="small muted">{t("menu.storage")}</p>
       </main>
     </>

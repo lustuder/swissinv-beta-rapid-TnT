@@ -2,7 +2,7 @@
 
 A phone-first web app for **reuse inventories** of existing buildings, room by room, following the **Swiss-Inv data structure** (Cirkla, v1.0-2024). A person stays in the loop at every step: the building register pre-fills the building data, tap-to-outline proposes the element, the element catalogue proposes eBKP, IFC entity and unit – and the person checks and completes everything. Every element records how long it took, so assisted and manual inventory can be compared.
 
-**Live demo:** https://bendieklaranjo.github.io/swissinv-beta/
+**Live demo:** https://lustuder.github.io/swissinv-beta-rapid-TnT/
 
 SwissInv-Beta is the public, model-free part of the research. The full tool with vision models, LiDAR and price prediction is **BUISI**, developed separately.
 
@@ -48,7 +48,38 @@ Open the `Local` address on your computer, or the `Network` address on your phon
 
 ## Live demo (GitHub Pages)
 
-Every push to `main` builds the app and publishes it (`.github/workflows/deploy.yml`, Pages source: GitHub Actions). The demo URL follows the repository name. After a deploy, reload with Ctrl+Shift+R or use a private window – Pages caches for about 10 minutes. Each tester's data stays in their own browser.
+Every push to `main` builds the app and publishes it (`.github/workflows/deploy.yml`, Pages source: GitHub Actions). The demo URL follows the repository name. After a deploy, reload with Ctrl+Shift+R or use a private window – Pages caches for about 10 minutes. Each tester's data stays in their own browser, unless the optional online sync is set up (see below). The build reads the repository variables `VITE_SYNC_URL` and `VITE_QR_BASE_URL`.
+
+## Online sync (optional): scan a label with another phone
+
+Without sync, all data stays in the browser of the device that captured it (IndexedDB). A second phone that scans a label only sees "unknown on this device". With the optional online sync, the capturing device also uploads its projects and elements to the team's Cloudflare Worker, and **any phone that scans a label sees a read-only copy** of that element. Free Cloudflare plan with a Worker and a D1 database only; the Worker is in `worker/`.
+
+**Photos and documents are not uploaded.** They stay on the capturing phone. Online file storage (Cloudflare R2) needs a payment method, so it is not used. The read-only copy shows how many photos the element has and the names of its documents, with "stored only on the capturing device". To hand over photos and documents, use the ZIP export.
+
+**How it works**
+
+1. **Offline first stays.** Every save goes to IndexedDB first, exactly as without sync. `src/lib/store.ts` then queues the change in an outbox (its own IndexedDB store, `src/lib/sync.ts`). Only the newest state per record is kept.
+2. **Upload** about 3 s after the last change, at app start and when the device comes online; with backoff when it fails. Nothing queued is lost: an entry leaves the outbox only after the Worker confirmed it. Uploads are safe to repeat (upsert by id, the newest `updatedAt` wins).
+3. **Deletes** (element, room, project) are deleted online too, as tombstones, so an older upload can never bring them back.
+4. The first sync of a device uploads everything already on it (delete test projects first if they should not go online). Only the writing tab syncs.
+5. **Status** in the main menu and the project menu: "All saved online", "3 changes waiting to upload", "Sync off", "Team key missing / wrong", "Offline".
+6. **Scan:** a phone that does not have the element fetches it by its label code and shows a read-only copy: Swiss-Inv fields, Bauteil ID, room tag and floor, project name and address, photo count and document names. Nothing is imported into that phone, and nothing can be edited there. Offline, or before the capturing device has uploaded, the label screen says so.
+
+**What is public.** Only by label code, one element at a time: its fields, its room, the project name and address, the number of photos and the document names. **Not public:** client and auditor contacts, timing data, photos and document files, and any list of projects or elements. Writing and deleting need the **team key**: enter it once per device in the main menu (stored on that device). Scanning needs no key. Label codes are random (31⁷ combinations), but anyone who has a label can see that element – do not put confidential notes on elements you label.
+
+**Setup (once).** Free Cloudflare account (no payment method needed), Node 18+. Data stays in the EU (D1 created with EU jurisdiction).
+
+1. Local test first, no account needed: `cd worker`, `npm install`, copy `.dev.vars.example` to `.dev.vars` and set a key, `npm run migrate:local`, `npm run dev` (Worker on http://localhost:8787). In the app folder, put `VITE_SYNC_URL=http://localhost:8787` in `.env.local` and run `npm run dev`; enter the same key in the main menu.
+2. `npx wrangler login`
+3. `npx wrangler d1 create swissinv-sync --jurisdiction=eu` – put the printed `database_id` into `worker/wrangler.toml`.
+4. `npm run migrate:remote`
+5. `npx wrangler secret put TEAM_KEY` – a long random key. Never commit it (the repository is public).
+6. `npm run deploy` – note the address, e.g. `https://swissinv-sync.<account>.workers.dev`.
+7. GitHub: **Settings → Secrets and variables → Actions → Variables**: `VITE_SYNC_URL` = the Worker address, `VITE_QR_BASE_URL` = `https://lustuder.github.io/swissinv-beta-rapid-TnT/`. Push to `main`; the deploy builds them in. Without `VITE_SYNC_URL` the app behaves as before ("Sync off").
+
+**Costs: none.** Without a payment method on the Cloudflare account nothing can be billed. When a free limit is reached, requests fail until the limit resets; nothing is charged. Limits: Workers 100,000 requests a day (then error 1027 until midnight UTC) and 10 ms CPU per request; D1 500 MB per database and daily row read and write limits. An element is a few KB, so 500 MB holds tens of thousands of elements. The debounced upload keeps the number of requests low, and a change that fails stays in the outbox until it goes through. Check the current limits on cloudflare.com.
+
+**Backup.** The online copy is for scanning, not a backup tool: there is no restore to a new device in this version. Keep exporting (ZIP with Excel, photos and documents).
 
 ## Swiss-Inv conformity
 
@@ -68,7 +99,7 @@ Every push to `main` builds the app and publishes it (`.github/workflows/deploy.
 1. **Sheet:** A4 with 3 × 8 labels of 70 × 37 mm, no side margin. Print at 100 % (actual size).
 2. **Label:** the QR code, the code (e.g. `K7M2-X9PA`), the Bauteil ID, the Bezeichnung, the Verortung and the project name. Long text ends with "…". Characters outside Windows-1252 print as "?", as in the PDF report.
 3. **Code:** 8 characters from `23456789ABCDEFGHJKMNPQRSTUVWXYZ`. The last character is a check character, so a typing mistake is found. An element gets its code at the first label export and keeps it. A second export prints the same codes. The code is in the "Zusatzfelder" sheet as "Etiketten-Code".
-4. **Link:** the QR code holds `<address>?e=<CODE>`. On GitHub Pages, the address is the published app. To print from another address, set `VITE_QR_BASE_URL` in `.env.local`, for example `VITE_QR_BASE_URL=https://bendieklaranjo.github.io/swissinv-beta/`. The Export screen shows the address and warns if a phone outside your network cannot open it.
+4. **Link:** the QR code holds `<address>?e=<CODE>`. On GitHub Pages, the address is the published app. To print from another address, set `VITE_QR_BASE_URL` in `.env.local`, for example `VITE_QR_BASE_URL=https://lustuder.github.io/swissinv-beta-rapid-TnT/` (`.env.example` lists both variables). The Export screen shows the address and warns if a phone outside your network cannot open it.
 5. **A printed label keeps its address forever.** Print labels for real use only from the permanent address.
 
 **One label for one element.** In the room screen, each element row has a QR button on the right, drafts too. It opens a window with the label preview, **Print** and **Download PDF**. The PDF is one page of 70 × 37 mm, for a label printer, or print it at 100 % on A4 and cut it out. If the element has no code yet, it gets one when the window opens. Without Bluetooth (iPhone, Firefox), **Print** works with the PDF: on a PC it opens the print dialog; on a phone it opens the PDF in the phone's viewer, which has Print or Share.
@@ -90,7 +121,7 @@ Every push to `main` builds the app and publishes it (`.github/workflows/deploy.
 
 On Android nothing changes: the button is not shown there, and **Print** works over Bluetooth LE as before.
 
-**Scan a label.** The phone camera opens the link, and the app opens the element page (photos step). If no element on this device has the code, or more than one element has it, the app shows the label screen. **Main menu → Open a label** takes a typed code or a pasted link.
+**Scan a label.** The phone camera opens the link, and the app opens the element page (photos step). If no element on this device has the code, or more than one element has it, the app shows the label screen. With online sync, a code that is not on this device is looked up online and shown as a read-only copy. **Main menu → Open a label** takes a typed code or a pasted link.
 
 Limits:
 
@@ -137,9 +168,10 @@ src/
     zebra.ts         Zebra printer over Web Bluetooth: choose once, reconnect, send
     zebraSerial.ts   Zebra printer over a Bluetooth serial port (Web Serial, PCs only; Android uses zebra.ts)
     labels.ts        label codes and the store: link address, assign codes, open a scanned link
+    sync.ts          optional online sync: outbox, upload to the Worker, team key, read-only lookup by label code
     images.ts        photo decoding (incl. iPhone HEIC), compression, cropping
     nav.ts           screen navigation
-  screens/           one file per screen (Label.tsx: open a label by code or link)
+  screens/           one file per screen (Label.tsx: open a label by code or link; online copy via RemoteElement.tsx)
   components/        shared UI pieces (LabelDialog.tsx: the QR label of one element;
                      ElementSearch.tsx: search bar and result list; ElementPicker.tsx: choose an element to prefill from;
                      DocUpload.tsx: upload, open and remove documents)

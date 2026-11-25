@@ -1,12 +1,15 @@
 /**
- * App data store: projects and elements in IndexedDB on the device, photos as Blobs.
- * Components subscribe with `useData()`. To move to a backend (e.g. Supabase) later,
- * replace the four persistence functions at the bottom – the rest of the app stays the same.
+ * App data store: projects and elements in IndexedDB on the device, photos and documents as Blobs.
+ * Components subscribe with `useData()`. IndexedDB is the main store (offline first). After each
+ * local write, the persistence functions at the bottom also queue the change for the optional online
+ * sync in lib/sync.ts (projects and elements only; photos and documents stay on the device).
+ * This file stays the only entry point to storage.
  */
 import { useSyncExternalStore, useEffect, useState } from "react";
 import { createStore, get, set, del, entries } from "idb-keyval";
 import type { Element, Project } from "../domain/types";
 import { t } from "../i18n";
+import { initSync, queueRecord, queueRemove } from "./sync";
 
 const dataDb = createStore("buisi-data", "records"); // name kept so v0.1 data stays readable
 const photoDb = createStore("buisi-photos", "blobs");
@@ -63,6 +66,8 @@ export async function loadAll() {
   }
   data.ready = true;
   emit();
+  // optional online sync (off without VITE_SYNC_URL); it reads through these hooks, never imports this module
+  void initSync({ isStale: () => stale, all: () => ({ projects: Object.values(data.projects), elements: Object.values(data.elements) }) });
 }
 
 export function saveProject(p: Project) {
@@ -194,13 +199,16 @@ export function usePhotoUrl(id?: string) {
   return url;
 }
 
-/* ---------- persistence (swap these for a backend later) ---------- */
+/* ---------- persistence: IndexedDB first, then the sync outbox (lib/sync.ts) ---------- */
 async function persist(key: string, value: unknown) {
   if (stale) return;
-  try { await set(key, JSON.parse(JSON.stringify(value)), dataDb); }
-  catch (e) { console.warn("Save failed", e); window.dispatchEvent(new CustomEvent("buisi:toast", { detail: t("err.save") })); }
+  const copy = JSON.parse(JSON.stringify(value));
+  try { await set(key, copy, dataDb); }
+  catch (e) { console.warn("Save failed", e); window.dispatchEvent(new CustomEvent("buisi:toast", { detail: t("err.save") })); return; }
+  queueRecord(key, copy);
 }
 async function remove(key: string) {
   if (stale) return;
   try { await del(key, dataDb); } catch (e) { console.warn(e); }
+  queueRemove(key);
 }

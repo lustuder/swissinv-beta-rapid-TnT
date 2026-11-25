@@ -1,0 +1,18 @@
+# SwissInv-Beta online sync: Worker (API) + D1 (projects and elements). Free plan only, no R2 and
+# no payment method: photos and documents stay on the capturing phone.
+# Setup: see "Online sync" in ../README.md. The team key is a secret (wrangler secret put TEAM_KEY),
+# never in this file.
+name = "swissinv-sync"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Browsers on these addresses may call the API (comma-separated). Local dev addresses are always allowed.
+ALLOWED_ORIGINS = "https://lustuder.github.io"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "swissinv-sync"
+# Replace with the id printed by: npx wrangler d1 create swissinv-sync --jurisdiction=eu
+database_id = "6f7ade3d-2355-4b01-aa88-b813be9fcca4"
+migrations_dir = "migrations"
