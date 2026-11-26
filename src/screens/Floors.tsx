@@ -13,7 +13,7 @@ import { deleteRoom, elementsOf, saveProject, useData } from "../lib/store";
 import { toast } from "../lib/toast";
 
 /** Room name for display: the room's own name, else its use in the UI language. */
-export const roomTitle = (r: Room) => r.name || (USES.find(u => u.code === r.useCode)?.[getLang()] ?? r.useLabel);
+export const roomTitle = (r: Pick<Room, "name" | "useCode" | "useLabel">) => r.name || (USES.find(u => u.code === r.useCode)?.[getLang()] ?? r.useLabel);
 export const useName = (r: Room) => USES.find(u => u.code === r.useCode)?.[getLang()] ?? r.useLabel;
 
 export function Floors({ pid }: { pid: string }) {

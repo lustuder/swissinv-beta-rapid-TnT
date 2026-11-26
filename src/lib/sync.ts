@@ -201,9 +201,11 @@ export interface RemoteElement {
 export interface RemoteItem {
   element: RemoteElement;
   room: { tag: string; name: string; floor: number; useLabel: string } | null;
-  project: { name: string; adresse: string; hausnummer: string; plz: string; ort: string; land: string } | null;
+  /** id: the project's id, to open its whole inventory (fetchInventory). */
+  project: { id: string; name: string; adresse: string; hausnummer: string; plz: string; ort: string; land: string } | null;
 }
-export type LabelResult = { ok: true; items: RemoteItem[] } | { ok: false; reason: "off" | "offline" | "notFound" | "error" };
+export type RemoteFail = { ok: false; reason: "off" | "offline" | "notFound" | "error" };
+export type LabelResult = { ok: true; items: RemoteItem[] } | RemoteFail;
 
 /** Public read of one label code. No team key needed. */
 export async function fetchLabel(code: string): Promise<LabelResult> {
@@ -215,5 +217,40 @@ export async function fetchLabel(code: string): Promise<LabelResult> {
     if (!res.ok) return { ok: false, reason: "error" };
     const body = await res.json() as { items?: RemoteItem[] };
     return body.items?.length ? { ok: true, items: body.items } : { ok: false, reason: "notFound" };
+  } catch { return { ok: false, reason: navigator.onLine ? "error" : "offline" }; }
+}
+
+/* ---------- the whole inventory of a scanned element's project (read-only) ---------- */
+export interface RemoteRoom { id: string; floor: number; name: string; tag: string; useCode: string; useLabel: string; createdAt: number }
+/** One element of the inventory: the same whitelist as RemoteElement, plus where it is and its link group. */
+export interface RemoteListElement extends Omit<RemoteElement, "labelCode"> {
+  id: string;
+  roomId: string;
+  groupId?: string;
+  labelCode?: string;
+  createdAt: number;
+}
+/** Building data without contacts (Swiss-Inv building fields, keyed as in BUILDING_FIELDS). */
+export interface RemoteProject { id: string; name: string; building: Record<string, string>; rooms: RemoteRoom[] }
+export interface RemoteInventory { project: RemoteProject; elements: RemoteListElement[] }
+export type InventoryResult = { ok: true; data: RemoteInventory } | RemoteFail;
+
+/** Kept for this page visit, so going from the list to an element and back does not load it again. */
+const inventories = new Map<string, RemoteInventory>();
+
+/** Public read of a project's inventory; the label code must belong to that project. No team key needed. */
+export async function fetchInventory(code: string, pid: string, force = false): Promise<InventoryResult> {
+  const k = code + "/" + pid, hit = inventories.get(k);
+  if (hit && !force) return { ok: true, data: hit };
+  if (!syncEnabled()) return { ok: false, reason: "off" };
+  if (!navigator.onLine) return { ok: false, reason: "offline" };
+  try {
+    const res = await fetch(`${BASE}/api/label/${encodeURIComponent(code)}/project/${encodeURIComponent(pid)}`);
+    if (res.status === 404) return { ok: false, reason: "notFound" };
+    if (!res.ok) return { ok: false, reason: "error" };
+    const data = await res.json() as RemoteInventory;
+    if (!data?.project || !Array.isArray(data.elements)) return { ok: false, reason: "error" };
+    inventories.set(k, data);
+    return { ok: true, data };
   } catch { return { ok: false, reason: navigator.onLine ? "error" : "offline" }; }
 }

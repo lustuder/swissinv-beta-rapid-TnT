@@ -64,8 +64,9 @@ Without sync, all data stays in the browser of the device that captured it (Inde
 4. The first sync of a device uploads everything already on it (delete test projects first if they should not go online). Only the writing tab syncs.
 5. **Status** in the main menu and the project menu: "All saved online", "3 changes waiting to upload", "Sync off", "Team key missing / wrong", "Offline".
 6. **Scan:** a phone that does not have the element fetches it by its label code and shows a read-only copy: Swiss-Inv fields, Bauteil ID, room tag and floor, project name and address, photo count and document names. Nothing is imported into that phone, and nothing can be edited there. Offline, or before the capturing device has uploaded, the label screen says so.
+7. **Whole inventory:** below the scanned element, **«Ganzes Inventar ansehen»** opens the whole inventory of its project, read-only: building information (without contacts), floors and rooms with their elements, linked elements as one bar, and the element search. Every element opens the same read-only view. **Refresh** loads the newest online state.
 
-**What is public.** Only by label code, one element at a time: its fields, its room, the project name and address, the number of photos and the document names. **Not public:** client and auditor contacts, timing data, photos and document files, and any list of projects or elements. Writing and deleting need the **team key**: enter it once per device in the main menu (stored on that device). Scanning needs no key. Label codes are random (31⁷ combinations), but anyone who has a label can see that element – do not put confidential notes on elements you label.
+**What is public.** Only by label code: the element with that code (its fields, its room, the project name and address, the number of photos and the document names) and the **whole inventory of its project** (all its elements with the same data, its rooms, and the building information without the contacts section). The Worker returns a project only together with a label code of that project. **Not public:** client and auditor contacts (also architect and engineer), timing data, photos and document files, and any list of projects. Writing and deleting need the **team key**: enter it once per device in the main menu (stored on that device). Scanning needs no key. Label codes are random (31⁷ combinations), but anyone who has a label can see the whole inventory of that project – do not put confidential notes into a project you label.
 
 **Setup (once).** Free Cloudflare account (no payment method needed), Node 18+. Data stays in the EU (D1 created with EU jurisdiction).
 
@@ -121,7 +122,7 @@ Without sync, all data stays in the browser of the device that captured it (Inde
 
 On Android nothing changes: the button is not shown there, and **Print** works over Bluetooth LE as before.
 
-**Scan a label.** The phone camera opens the link, and the app opens the element page (photos step). If no element on this device has the code, or more than one element has it, the app shows the label screen. With online sync, a code that is not on this device is looked up online and shown as a read-only copy. **Main menu → Open a label** takes a typed code or a pasted link.
+**Scan a label.** The phone camera opens the link, and the app opens the element page (photos step). If no element on this device has the code, or more than one element has it, the app shows the label screen. With online sync, a code that is not on this device is looked up online and shown as a read-only copy, with a button to the whole inventory of its project. **Main menu → Open a label** takes a typed code or a pasted link.
 
 Limits:
 
@@ -168,10 +169,10 @@ src/
     zebra.ts         Zebra printer over Web Bluetooth: choose once, reconnect, send
     zebraSerial.ts   Zebra printer over a Bluetooth serial port (Web Serial, PCs only; Android uses zebra.ts)
     labels.ts        label codes and the store: link address, assign codes, open a scanned link
-    sync.ts          optional online sync: outbox, upload to the Worker, team key, read-only lookup by label code
+    sync.ts          optional online sync: outbox, upload to the Worker, team key, read-only lookup by label code and project inventory
     images.ts        photo decoding (incl. iPhone HEIC), compression, cropping
     nav.ts           screen navigation
-  screens/           one file per screen (Label.tsx: open a label by code or link; online copy via RemoteElement.tsx)
+  screens/           one file per screen (Label.tsx: open a label by code or link; online copy via RemoteElement.tsx; RemoteInventory.tsx: whole inventory of a scanned project, read-only)
   components/        shared UI pieces (LabelDialog.tsx: the QR label of one element;
                      ElementSearch.tsx: search bar and result list; ElementPicker.tsx: choose an element to prefill from;
                      DocUpload.tsx: upload, open and remove documents)

@@ -142,4 +142,6 @@ export type Route =
   | { name: "element"; pid: string; elementId: string; step: number }
   | { name: "export"; pid: string }
   | { name: "study" }
-  | { name: "label"; code?: string };
+  | { name: "label"; code?: string }
+  /** Read-only inventory of a scanned element's project, from the online copy (no local data). */
+  | { name: "inventory"; code: string; pid: string; floor?: number; elementId?: string };

@@ -369,6 +369,22 @@ export const UI = {
   "rem.error": d("Die Online-Datenbank antwortet nicht. Später erneut versuchen.", "The online database does not answer. Try again later."),
   "rem.retry": d("Erneut versuchen", "Try again"),
 
+  // whole inventory of a scanned element's project (online copy, read-only)
+  "ri.open": d("Ganzes Inventar ansehen", "View the whole inventory"),
+  "ri.readOnly": d("Bearbeiten geht nur auf dem Gerät, mit dem erfasst wurde.", "Editing is only possible on the device used for the inventory."),
+  "ri.count1": d("1 Bauteil", "1 element"),
+  "ri.countN": d("{n} Bauteile", "{n} elements"),
+  "ri.refresh": d("Aktualisieren", "Refresh"),
+  "ri.building": d("Gebäudeinformationen", "Building information"),
+  "ri.search": d("Bauteile im Inventar suchen", "Search elements in the inventory"),
+  "ri.floors": d("Geschoss wählen", "Choose a floor"),
+  "ri.scanned": d("gescannt", "scanned"),
+  "ri.emptyRoom": d("Keine Bauteile in diesem Raum.", "No elements in this room."),
+  "ri.empty": d("Noch keine Räume und Bauteile online.", "No rooms or elements online yet."),
+  "ri.noRoom": d("Ohne Raum", "No room"),
+  "ri.notFound": d("Dieses Inventar ist online nicht (mehr) vorhanden. Etikette erneut scannen.", "This inventory is not online (any more). Scan the label again."),
+  "ri.gone": d("Dieses Bauteil ist online nicht (mehr) vorhanden.", "This element is not online (any more)."),
+
   // errors
   "err.photoFormat": d("Dieses Fotoformat kann nicht geöffnet werden. Bitte JPEG oder PNG verwenden.", "This photo format can't be opened. Please use a JPEG or PNG photo."),
   "err.save": d("Speichern fehlgeschlagen. Der Speicher des Geräts ist evtl. voll.", "Saving failed. Your device may be out of storage."),

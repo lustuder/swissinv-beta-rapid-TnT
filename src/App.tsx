@@ -14,6 +14,7 @@ import { Language } from "./screens/Language";
 import { Menu } from "./screens/Menu";
 import { ModeSwitch } from "./screens/ModeSwitch";
 import { ProjectForm } from "./screens/ProjectForm";
+import { RemoteInventory } from "./screens/RemoteInventory";
 import { RoomScreen } from "./screens/Room";
 import { Start } from "./screens/Start";
 import { Study } from "./screens/Study";
@@ -62,6 +63,7 @@ export function App() {
     case "export": screen = <ExportScreen pid={r.pid} />; break;
     case "study": screen = <Study />; break;
     case "label": screen = <LabelScreen key={r.code ?? ""} code={r.code} />; break;
+    case "inventory": screen = <RemoteInventory key={r.code + r.pid} code={r.code} pid={r.pid} floor={r.floor} elementId={r.elementId} />; break;
     default: screen = <Menu />;
   }
   return <>{screen}<Toast /></>;

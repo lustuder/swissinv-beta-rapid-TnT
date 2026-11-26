@@ -15,7 +15,8 @@ import { roomTitle } from "./Floors";
  * Open a label: type a code (or paste a label link). Also shown when a scanned label is not
  * known on this device, has a wrong format, or more than one element carries its code.
  * Not on this device: with online sync, the element is fetched by its label code and shown as a
- * read-only copy (nothing is imported into this device's projects).
+ * read-only copy (nothing is imported into this device's projects), with a button to the whole
+ * inventory of its project (RemoteInventory).
  */
 export function LabelScreen({ code }: { code?: string }) {
   useLang();
@@ -37,6 +38,7 @@ export function LabelScreen({ code }: { code?: string }) {
   }, [valid, local, attempt]);
   const remoteItems = remote && remote !== "loading" && remote.ok ? remote.items : [];
   const reason = remote && remote !== "loading" && !remote.ok ? remote.reason : null;
+  const current = remoteItems.length ? remoteItems[Math.min(pick, remoteItems.length - 1)] : null;
 
   const submit = (ev: React.FormEvent) => {
     ev.preventDefault();
@@ -64,7 +66,10 @@ export function LabelScreen({ code }: { code?: string }) {
             </div>
           </>
         )}
-        {valid && !local && remoteItems.length > 0 && <RemoteElement item={remoteItems[Math.min(pick, remoteItems.length - 1)]} />}
+        {valid && !local && current && <RemoteElement item={current} />}
+        {valid && !local && current?.project?.id && (
+          <button type="button" className="btn primary block" onClick={() => navigate({ name: "inventory", code: valid, pid: current.project!.id })}>{t("ri.open")}</button>
+        )}
         {valid && !local && reason && (
           <div className="card stack" style={{ gap: 6 }}>
             <span className="eyebrow">{t("lbl.code")} {formatLabelCode(valid)}</span>

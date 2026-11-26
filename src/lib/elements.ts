@@ -117,8 +117,13 @@ const num = (s?: string) => { const n = parseFloat((s ?? "").replace(",", "."));
  * How many entries of this building element exist in the building, and their total Menge.
  * qty is given only when every entry with a Menge uses the same Einheit.
  */
-export function sameCount(e: Element): { n: number; qty?: number; unit?: string } {
-  const all = sameElements(e);
+export function sameCount(e: Element): SameCount {
+  return countSame(sameElements(e));
+}
+
+export interface SameCount { n: number; qty?: number; unit?: string }
+/** Count and total Menge of the given entries of one building element (also used for the online inventory). */
+export function countSame(all: { fields: Record<string, string> }[]): SameCount {
   const withQty = all.filter(x => num(x.fields.menge) !== null);
   const units = new Set(withQty.map(x => x.fields.einheit ?? ""));
   if (!withQty.length || units.size !== 1 || units.has("")) return { n: all.length };
@@ -171,7 +176,7 @@ export function linkByGtin(e: Element) {
 }
 
 /** Name for lists: Bezeichnung; for an element added with an existing ID without a name "GTIN 7612345678901"; else the type. */
-export function displayName(e: Element): string {
+export function displayName(e: { entry?: string; fields: Record<string, string> }): string {
   if (e.entry === "gtin") return e.fields.bezeichnung || (e.fields.bauteilId ? `GTIN ${e.fields.bauteilId}` : t("gt.title"));
   return e.fields.bezeichnung || e.fields.bauteiltyp || t("rm.unnamed");
 }

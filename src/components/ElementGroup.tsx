@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Element, Project } from "../domain/types";
 import { getLang, opt, t } from "../i18n";
-import { displayName, sameCount, sameElements } from "../lib/elements";
+import { displayName, sameCount, sameElements, type SameCount } from "../lib/elements";
 import { searchElements } from "../lib/search";
 import { Icon } from "./Icon";
 
@@ -39,14 +39,16 @@ export function toggleIn(set: Set<string>, id: string): Set<string> {
   return next;
 }
 
-export function GroupBar({ id, first, open, onToggle, badges, children }: {
-  id: string; first: Element; open: boolean; onToggle: () => void;
+export function GroupBar({ id, first, open, onToggle, badges, children, name, count }: {
+  id: string; first: Element | null; open: boolean; onToggle: () => void;
+  /** Name and count when the entries are not on this device (online inventory); else taken from `first`. */
+  name?: string; count?: SameCount;
   /** e.g. the photo numbers of the entries in this room */
   badges?: ReactNode;
   /** the entries, shown when open */
   children: ReactNode;
 }) {
-  const sc = sameCount(first);
+  const sc = count ?? (first ? sameCount(first) : { n: 0 });
   const qty = sc.qty !== undefined ? ` · ${getLang() === "de" ? String(sc.qty).replace(".", ",") : sc.qty} ${opt(sc.unit ?? "")}` : "";
   const kids = "grp-" + id;
   return (
@@ -54,7 +56,7 @@ export function GroupBar({ id, first, open, onToggle, badges, children }: {
       <button type="button" className="li group-head" aria-expanded={open} aria-controls={kids} title={open ? t("grp.close") : t("grp.open")} onClick={onToggle}>
         <span className={"chev" + (open ? " open" : "")} aria-hidden="true"><Icon name="next" size={18} /></span>
         {badges}
-        <div className="grow"><div className="t">{displayName(first)}</div><div className="s">{t("same.pill", { n: sc.n })}{qty}</div></div>
+        <div className="grow"><div className="t">{name ?? (first ? displayName(first) : "")}</div><div className="s">{t("same.pill", { n: sc.n })}{qty}</div></div>
         <span className="group-count">{sc.n}</span>
       </button>
       {open && <div id={kids} className="group-kids">{children}</div>}
