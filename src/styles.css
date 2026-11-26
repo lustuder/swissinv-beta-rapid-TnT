@@ -345,7 +345,9 @@ details.multi.suggested{background:color-mix(in oklab,var(--c4) 13%,var(--surfac
 .sync-dot.wait{background:var(--primary)}
 .sync-card .row input{min-width:0}
 /* read-only copy of a scanned element */
-.remote-note{border-color:var(--primary)}
+.remote-note{border-color:var(--primary);padding:8px 12px}
+.remote-note b{font-size:13px}
+.remote-note .small{font-size:12px}
 .ri-floors .chip{min-height:44px}
 .remote-fields{margin:0;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
 .remote-fields>div{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:8px;padding:8px 12px;border-top:1px solid var(--line)}

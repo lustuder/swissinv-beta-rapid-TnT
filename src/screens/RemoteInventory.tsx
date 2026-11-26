@@ -49,7 +49,10 @@ export function RemoteInventory({ code, pid, floor, elementId }: { code: string;
   }, [els]);
 
   const title = p?.name || t("inv.title");
-  const bar = <TopBar title={title} onBack={back} onHome={() => home()} />;
+  // home: from an element back to this inventory's overview; from the overview to the main menu
+  const bar = elementId
+    ? <TopBar title={title} onBack={back} onHome={() => navigate({ name: "inventory", code, pid, floor })} homeLabel={t("ri.home")} />
+    : <TopBar title={title} onBack={back} onHome={() => home()} homeLabel={t("c.mainMenu")} />;
 
   if (!data || !p) {
     const reason = res !== "loading" && !res.ok ? res.reason : null;

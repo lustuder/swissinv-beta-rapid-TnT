@@ -371,6 +371,7 @@ export const UI = {
 
   // whole inventory of a scanned element's project (online copy, read-only)
   "ri.open": d("Ganzes Inventar ansehen", "View the whole inventory"),
+  "ri.home": d("Übersicht dieses Inventars", "Overview of this inventory"),
   "ri.readOnly": d("Bearbeiten geht nur auf dem Gerät, mit dem erfasst wurde.", "Editing is only possible on the device used for the inventory."),
   "ri.count1": d("1 Bauteil", "1 element"),
   "ri.countN": d("{n} Bauteile", "{n} elements"),

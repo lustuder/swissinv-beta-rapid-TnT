@@ -39,6 +39,7 @@ export function LabelScreen({ code }: { code?: string }) {
   const remoteItems = remote && remote !== "loading" && remote.ok ? remote.items : [];
   const reason = remote && remote !== "loading" && !remote.ok ? remote.reason : null;
   const current = remoteItems.length ? remoteItems[Math.min(pick, remoteItems.length - 1)] : null;
+  const openInventory = () => { if (valid && current?.project?.id) navigate({ name: "inventory", code: valid, pid: current.project.id }); };
 
   const submit = (ev: React.FormEvent) => {
     ev.preventDefault();
@@ -50,8 +51,14 @@ export function LabelScreen({ code }: { code?: string }) {
 
   return (
     <>
-      <TopBar title={t("lbl.title")} onBack={() => home()} onHome={() => home()} />
+      {/* home: the overview of the scanned element's project inventory, when it came from the online copy */}
+      {valid && !local && current?.project?.id
+        ? <TopBar title={t("lbl.title")} onBack={() => home()} onHome={openInventory} homeLabel={t("ri.home")} />
+        : <TopBar title={t("lbl.title")} onBack={() => home()} onHome={() => home()} />}
       <main className="wrap">
+        {valid && !local && current?.project?.id && (
+          <button type="button" className="btn primary block" onClick={openInventory}>{t("ri.open")}</button>
+        )}
         {code !== undefined && !valid && !bad && <p className="small" style={{ color: "var(--warn)" }}>{t("lbl.invalid")}</p>}
         {valid && !local && remote === "loading" && <div className="status busy">{t("rem.loading")}</div>}
         {valid && !local && remoteItems.length > 1 && (
@@ -67,9 +74,6 @@ export function LabelScreen({ code }: { code?: string }) {
           </>
         )}
         {valid && !local && current && <RemoteElement item={current} />}
-        {valid && !local && current?.project?.id && (
-          <button type="button" className="btn primary block" onClick={() => navigate({ name: "inventory", code: valid, pid: current.project!.id })}>{t("ri.open")}</button>
-        )}
         {valid && !local && reason && (
           <div className="card stack" style={{ gap: 6 }}>
             <span className="eyebrow">{t("lbl.code")} {formatLabelCode(valid)}</span>
