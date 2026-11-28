@@ -233,6 +233,7 @@ export const UI = {
   "lbl.invalid": d("Das ist kein gültiger Code. Ein Code hat 8 Zeichen: 2–9 und A–Z ohne I, L, O.", "This is not a valid code. A code has 8 characters: 2–9 and A–Z without I, L, O."),
   "lbl.several": d("Mehrere Bauteile tragen diesen Code. Wählen Sie eines.", "Several elements carry this code. Choose one."),
   "lbl.print": d("Drucken", "Print"),
+  "lbl.pairHint": d("Beim ersten Verbinden: am Zebra-Drucker die Taste ganz rechts (Papier ausgeben) 3–5 Sekunden gedrückt halten, damit er sich koppelt.", "First connection: on the Zebra printer, hold the button on the far right (paper feed) for 3–5 seconds so it pairs."),
   "lbl.download": d("PDF herunterladen", "Download PDF"),
   "lbl.close": d("Schliessen", "Close"),
   "lbl.printing": d("Druckt…", "Printing…"),

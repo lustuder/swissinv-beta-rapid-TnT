@@ -13,6 +13,11 @@ export const DOTS = 8;
 const HEAD_DOTS = 576;
 /** Dots per point of font size. */
 const DOTS_PER_PT = 0.3528 * DOTS;
+/**
+ * ZQ511 linerless: the print starts right at the tear edge and the printer feeds extra paper
+ * after it. Drawn this much lower (same label length), the label looks centred on the paper.
+ */
+const SHIFT_MM = 5;
 
 export interface Bitmap {
   /** width in dots, a multiple of 8 */
@@ -89,7 +94,7 @@ export async function renderLabelBitmap(it: LabelItem): Promise<Bitmap> {
   ctx.fillStyle = "#000";
 
   // QR code, level M, whole dots per module so the edges stay sharp; centred in its 27 mm box
-  const box = s.qr * DOTS, x0 = s.pad * DOTS, y0 = s.pad * DOTS;
+  const box = s.qr * DOTS, x0 = s.pad * DOTS, y0 = (s.pad + SHIFT_MM) * DOTS;
   const qr = QR.create(it.url, { errorCorrectionLevel: "M" });
   const n = qr.modules.size, m = Math.floor(box / n), off = Math.floor((box - n * m) / 2);
   for (const r of qrRuns(n, (row, col) => !!qr.modules.get(row, col))) ctx.fillRect(x0 + off + r.col * m, y0 + off + r.row * m, r.len * m, m);
@@ -107,7 +112,8 @@ export async function renderLabelBitmap(it: LabelItem): Promise<Bitmap> {
   write(it.title, 700, 8.5, 1);
   write(it.lines[0] ?? "", 500, 8, 2);
   for (const l of it.lines.slice(1)) write(l, 500, 7, 2);
-  y = Math.max(y, y0 + (s.qr - 0.3) * DOTS);
+  // last line at the bottom of the QR, but never so low that g, p or y are cut at the paper's end
+  y = Math.min(Math.max(y, y0 + (s.qr - 0.3) * DOTS), h - 1.2 * DOTS);
   write(it.foot, 500, 6.5, 1);
 
   // 1 bit per dot: dark if brightness below 50 %

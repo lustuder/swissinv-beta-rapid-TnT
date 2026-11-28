@@ -123,6 +123,7 @@ export function LabelDialog({ e, p, onClose }: { e: Element; p: Project; onClose
       {isLocalUrl(base) && <p className="small" style={{ color: "var(--warn)", margin: 0 }}>{t("ex.labelsLocal")}</p>}
       {failed && <p className="small" style={{ color: "var(--danger)", margin: 0 }}>{t("ex.labelsFailed")}</p>}
       {btMessage && <p className="small" role="alert" style={{ color: "var(--danger)", margin: 0 }}>{btMessage}</p>}
+      {(bt || ser) && <p className="small muted" style={{ margin: 0 }}>{t("lbl.pairHint")}</p>}
       <div className="row">
         {bt
           ? <button type="button" className="btn primary grow" disabled={!zpl || busy} onClick={printZebra}><Icon name="print" /> {busy ? t("lbl.printing") : t("lbl.print")}</button>
